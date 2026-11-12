@@ -31,7 +31,7 @@ public sealed class Customer
 
     /// <summary>
     /// Replaces the address. Invoices already created keep the address they
-    /// copied; a draft takes the new one when <see cref="Invoice.ChangeCustomer"/> is called again.
+    /// copied when they were created.
     /// </summary>
     public void ChangeAddress(StructuredAddress address)
     {

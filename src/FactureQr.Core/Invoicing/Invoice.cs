@@ -95,17 +95,6 @@ public sealed class Invoice
     /// </summary>
     public bool IsOverdue(DateOnly today) => Status == InvoiceStatus.Issued && today > DueDate;
 
-    /// <summary>Addresses the draft to another customer (or the same one with a new address).</summary>
-    public void ChangeCustomer(Customer customer)
-    {
-        ArgumentNullException.ThrowIfNull(customer);
-        EnsureDraft("change the customer of");
-
-        CustomerId = customer.Id;
-        BillTo = customer.Address;
-        Revision++;
-    }
-
     /// <summary>Adds a line at the end of the draft and returns it.</summary>
     /// <exception cref="InvoiceRuleException">The invoice is not a draft, a value is invalid, or the new total would exceed the QR-bill maximum.</exception>
     public InvoiceLine AddLine(string description, decimal quantity, decimal unitPrice)

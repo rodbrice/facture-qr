@@ -40,11 +40,6 @@ public sealed class InvoiceIssuer
             .SingleOrDefaultAsync(i => i.Id == invoiceId, cancellationToken)
             ?? throw new KeyNotFoundException($"No invoice with the identifier {invoiceId}.");
 
-        if (invoice.Status != InvoiceStatus.Draft)
-        {
-            throw new InvoiceRuleException($"Invoice {invoice.Number} is already {invoice.Status}.");
-        }
-
         InvoiceNumber number = await InvoiceNumberAllocator.AllocateAsync(db, issueDate.Year, cancellationToken);
         invoice.Issue(number, issueDate, dueDate);
         await db.SaveChangesAsync(cancellationToken);

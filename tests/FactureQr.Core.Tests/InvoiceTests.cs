@@ -7,7 +7,6 @@ public class InvoiceTests
 {
     // Debtor addresses from the examples in Annex A of the Implementation Guidelines.
     private static readonly StructuredAddress SimonMuster = new("Simon Muster", "Musterstrasse", "1", "8000", "Seldwyla", "CH");
-    private static readonly StructuredAddress PiaMaria = new("Pia-Maria Rutschmann-Schnyder", "Grosse Marktgasse", "28", "9400", "Rorschach", "CH");
 
     private static readonly DateOnly IssueDate = new(2026, 3, 2);
     private static readonly DateOnly DueDate = new(2026, 4, 1);
@@ -225,7 +224,6 @@ public class InvoiceTests
 
         Assert.Throws<InvoiceRuleException>(() => invoice.AddLine("Extra", 1m, 10m));
         Assert.Throws<InvoiceRuleException>(() => invoice.RemoveLine(line.Id));
-        Assert.Throws<InvoiceRuleException>(() => invoice.ChangeCustomer(new Customer(PiaMaria)));
         Assert.Throws<InvoiceRuleException>(() => invoice.Issue(new InvoiceNumber(2026, 2), IssueDate, DueDate));
 
         Assert.Single(invoice.Lines);
@@ -246,18 +244,6 @@ public class InvoiceTests
         customer.ChangeAddress(new StructuredAddress("Simon Muster", "Neue Strasse", "5", "8000", "Seldwyla", "CH"));
 
         Assert.Equal(SimonMuster, invoice.BillTo);
-    }
-
-    [Fact]
-    public void A_draft_can_be_addressed_to_another_customer()
-    {
-        var invoice = Draft();
-        var other = new Customer(PiaMaria);
-
-        invoice.ChangeCustomer(other);
-
-        Assert.Equal(other.Id, invoice.CustomerId);
-        Assert.Equal(PiaMaria, invoice.BillTo);
     }
 
     [Fact]
