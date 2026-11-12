@@ -12,6 +12,19 @@ jobs:
   build:
     name: Build, format and test
     runs-on: ubuntu-latest
+    services:
+      # An empty database on which the migrations are applied.
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Check out
         uses: actions/checkout@v7
@@ -22,7 +35,9 @@ jobs:
           global-json-file: global.json
 
       - name: Restore
-        run: dotnet restore
+        run: |
+          dotnet restore
+          dotnet tool restore
 
       - name: Build (warnings are errors)
         run: dotnet build --no-restore --configuration Release -warnaserror
@@ -30,5 +45,11 @@ jobs:
       - name: Check formatting
         run: dotnet format --no-restore --verify-no-changes
 
+      - name: Apply the migrations to an empty database
+        env:
+          FACTUREQR_DATABASE: Host=localhost;Database=facture_qr;Username=postgres;Password=postgres
+        run: dotnet ef database update --no-build --configuration Release --project src/FactureQr.Persistence
+
+      # The persistence tests start their own PostgreSQL with Testcontainers (Docker is available on the runner).
       - name: Test
         run: dotnet test --no-build --configuration Release
