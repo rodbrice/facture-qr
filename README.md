@@ -28,7 +28,7 @@ The invoice model (`Invoicing/`):
 |---|---|
 | `Customer` | A customer with a structured address. |
 | `Invoice` | An invoice in CHF to one customer, with its lines. States `Draft` → `Issued` → `Paid`; only a draft can change. The total is always the sum of the lines and stays within the QR-bill range (at most 999 999 999.99 CHF; at least 0.01 CHF to be issued). Issuing sets the number, the issue date and the due date. The customer's address is copied onto the invoice, so issued invoices do not change when the customer moves. Overdue is derived from the due date, not stored. |
-| `InvoiceLine` | Description, quantity (up to three decimals), unit price; amount = quantity × unit price rounded to the centime. |
+| `InvoiceLine` | Description, quantity (up to three decimals), unit price; amount = quantity × unit price rounded to the centime. The description is limited to the characters the PDF can print; typographic apostrophes, quotes and dashes are replaced by plain ones. |
 | `InvoiceNumber` | Year of the issue date and a sequence that restarts every year, printed as `2026-0001`. |
 | `InvoicePayment` | The QR-bill of an issued invoice: the creditor's account, the total, the address on the invoice as debtor, a reference made from the invoice number (QR reference with a QR-IBAN, Creditor Reference with an IBAN) and the message `Facture 2026-0001`. |
 | `InvoicePdf` | The invoice as a one-page A4 PDF in French, with the payment part across the bottom 105 mm. |
@@ -51,8 +51,8 @@ FACTUREQR_DATABASE="Host=localhost;Database=facture_qr;Username=postgres;Passwor
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /customers`, `GET /customers`, `GET /customers/{id}`, `PUT /customers/{id}` | Customers with a structured address |
-| `POST /invoices`, `GET /invoices?status=&overdue=`, `GET /invoices/{id}` | Drafts with their lines; the list with the state and whether the invoice is overdue |
+| `POST /customers`, `GET /customers`, `GET /customers/{id}` | Customers with a structured address |
+| `POST /invoices`, `GET /invoices`, `GET /invoices/{id}` | Drafts with their lines; the list with the state and whether each invoice is overdue |
 | `POST /invoices/{id}/lines`, `DELETE /invoices/{id}/lines/{lineId}` | Edit a draft |
 | `POST /invoices/{id}/issue` | Issue: next number of the year, issue date (today by default) and due date (30 days later by default) |
 | `POST /invoices/{id}/mark-paid` | Record the payment |

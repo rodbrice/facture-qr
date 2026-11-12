@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Codecrete.SwissQRBill.Generator;
 using Codecrete.SwissQRBill.Generator.Canvas;
 using FactureQr.Core.Billing;
@@ -70,6 +71,19 @@ public static class InvoicePdf
         QRBill.Draw(bill, canvas);
         return canvas.ToByteArray();
     }
+
+    /// <summary>
+    /// True when the regular font of the PDF contains the character: Basic Latin,
+    /// Latin-1 Supplement except ÿ, Latin Extended-A, Ș ș Ț ț and €. Any other
+    /// character makes <see cref="Render"/> fail, so text that will be printed is
+    /// checked with this before it is stored.
+    /// </summary>
+    public static bool CanPrint(Rune character) =>
+        character.Value is (>= 0x20 and <= 0x7E)
+            or (>= 0xA0 and <= 0xFE)
+            or (>= 0x100 and <= 0x17F)
+            or (>= 0x218 and <= 0x21B)
+            or 0x20AC;
 
     /// <summary>
     /// True when the lines fit in the table of one page above the payment part.

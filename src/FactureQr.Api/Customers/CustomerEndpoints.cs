@@ -28,11 +28,6 @@ public static class CustomerEndpoints
             .WithSummary("Returns one customer.")
             .ProducesProblem(StatusCodes.Status404NotFound);
 
-        group.MapPut("/{id:guid}", ChangeAddress)
-            .WithSummary("Replaces the address of a customer. Invoices already created keep the address they copied.")
-            .ProducesValidationProblem()
-            .ProducesProblem(StatusCodes.Status404NotFound);
-
         return app;
     }
 
@@ -72,29 +67,5 @@ public static class CustomerEndpoints
         return customer is null
             ? Problems.NotFound($"No customer with the identifier {id}.")
             : TypedResults.Ok(CustomerResponse.From(customer));
-    }
-
-    private static async Task<Results<Ok<CustomerResponse>, ValidationProblem, ProblemHttpResult>> ChangeAddress(
-        Guid id, AddressDto address, FactureQrDbContext db, ILoggerFactory loggers, CancellationToken cancellationToken)
-    {
-        Customer? customer = await db.Customers.SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
-        if (customer is null)
-        {
-            return Problems.NotFound($"No customer with the identifier {id}.");
-        }
-
-        try
-        {
-            customer.ChangeAddress(address.ToStructuredAddress());
-        }
-        catch (QrBillValidationException e)
-        {
-            return Problems.Invalid(Problems.JsonName(e.Field), e.Message);
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
-        ILogger logger = loggers.CreateLogger(LogCategory);
-        ApiLog.CustomerChanged(logger, customer.Id);
-        return TypedResults.Ok(CustomerResponse.From(customer));
     }
 }

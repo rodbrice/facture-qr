@@ -13,10 +13,6 @@ public static partial class ApiLog
     [LoggerMessage(Level = LogLevel.Information, Message = "Customer {CustomerId} created")]
     public static partial void CustomerCreated(ILogger logger, Guid customerId);
 
-    /// <summary>A customer's address was changed.</summary>
-    [LoggerMessage(Level = LogLevel.Information, Message = "Customer {CustomerId} changed")]
-    public static partial void CustomerChanged(ILogger logger, Guid customerId);
-
     /// <summary>A draft was created.</summary>
     [LoggerMessage(Level = LogLevel.Information, Message = "Invoice {InvoiceId} created for customer {CustomerId}")]
     public static partial void InvoiceCreated(ILogger logger, Guid invoiceId, Guid customerId);

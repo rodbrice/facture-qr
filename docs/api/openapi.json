@@ -110,65 +110,6 @@
             }
           }
         }
-      },
-      "put": {
-        "tags": [
-          "Customers"
-        ],
-        "summary": "Replaces the address of a customer. Invoices already created keep the address they copied.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddressDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CustomerResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/invoices": {
@@ -214,23 +155,7 @@
         "tags": [
           "Invoices"
         ],
-        "summary": "Lists the invoices, newest first, optionally filtered by status or overdue.",
-        "parameters": [
-          {
-            "name": "status",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/InvoiceStatus"
-            }
-          },
-          {
-            "name": "overdue",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ],
+        "summary": "Lists the invoices, newest first, each with its status and whether it is overdue.",
         "responses": {
           "200": {
             "description": "OK",
@@ -241,16 +166,6 @@
                   "items": {
                     "$ref": "#/components/schemas/InvoiceSummary"
                   }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
                 }
               }
             }
@@ -962,7 +877,7 @@
               "null",
               "string"
             ],
-            "description": "The due date; the issue date plus the configured payment term when omitted.",
+            "description": "The due date; the issue date plus 30 days when omitted.",
             "format": "date"
           }
         },
@@ -978,7 +893,7 @@
         "properties": {
           "description": {
             "type": "string",
-            "description": "What is invoiced, at most 200 characters, on one line."
+            "description": "What is invoiced, at most 200 characters, on one line. Typographic apostrophes, quotes, dashes and the ellipsis are replaced by their plain equivalents; a character the PDF cannot print is refused."
           },
           "quantity": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",

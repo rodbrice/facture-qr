@@ -16,9 +16,8 @@ The third unit (B2) exposes the invoice model of B1 over HTTP, so that a front e
 |---|---|---|
 | `POST /customers` | Create a customer | 201 + `Location` |
 | `GET /customers`, `GET /customers/{id}` | List by name, read one | 200 |
-| `PUT /customers/{id}` | Replace the address (invoices keep the address they copied) | 200 |
 | `POST /invoices` | Create a draft for a customer, optionally with lines | 201 + `Location` |
-| `GET /invoices?status=&overdue=` | List, newest first, without lines | 200 |
+| `GET /invoices` | List, newest first, without lines; each row carries the status and whether the invoice is overdue | 200 |
 | `GET /invoices/{id}` | Read one with its lines | 200 |
 | `POST /invoices/{id}/lines`, `DELETE /invoices/{id}/lines/{lineId}` | Edit a draft | 200 |
 | `POST /invoices/{id}/issue` | Issue: number, issue date, due date | 200 |
@@ -33,7 +32,7 @@ State changes are actions (`/issue`, `/mark-paid`) rather than a `PATCH` of the 
 
 Every error has a ProblemDetails body (RFC 9457, `application/problem+json`).
 
-- **400 Bad Request**: the request is wrong whatever the stored data is. Broken JSON, a missing or null required value, an address that breaks a QR-bill rule, a line with an invalid quantity or price, a due date before the issue date, a payment date in the future or before the issue date, a customer identifier in the body that does not exist. Validation errors carry an `errors` object keyed by the JSON field (`postalCode`, `lines[1]`, `dueDate`), so a form can show the message next to the field.
+- **400 Bad Request**: the request is wrong whatever the stored data is. Broken JSON, a missing or null required value, an address that breaks a QR-bill rule, a line with an invalid quantity or price, a line description with a character the PDF cannot print, a due date before the issue date, a payment date in the future or before the issue date, a customer identifier in the body that does not exist. Validation errors carry an `errors` object keyed by the JSON field (`postalCode`, `lines[1]`, `dueDate`), so a form can show the message next to the field.
 - **404 Not Found**: the customer, invoice or line named in the URL does not exist.
 - **409 Conflict**: the request is valid, but the state of the invoice does not allow it. Editing or issuing an invoice that is no longer a draft, issuing a draft without lines or with a total below 0.01 CHF, marking a draft or a paid invoice as paid, asking for the PDF of a draft, adding a line to a draft that has no room left on the page, or a concurrent change detected by the revision of the invoice (ADR-0003).
 
@@ -47,11 +46,11 @@ There is no separate validation library and no second copy of the rules. The req
 
 ### 4. The creditor comes from the configuration
 
-The creditor (name, structured address, IBAN or QR-IBAN) and the default payment term are read from the `Invoicing` configuration section (`appsettings.json`, environment variables such as `Invoicing__Creditor__Iban`). They are validated with the QR-bill rules when the application starts, so a wrong IBAN stops the start with a message naming the setting rather than failing at the first PDF. For one local user this is enough; editing these settings from the user interface (B3) may move them into the database with their own migration.
+The creditor (name, structured address, IBAN or QR-IBAN) is read from the `Invoicing` configuration section (`appsettings.json`, environment variables such as `Invoicing__Creditor__Iban`). They are validated with the QR-bill rules when the application starts, so a wrong IBAN stops the start with a message naming the setting rather than failing at the first PDF. For one local user this is enough; editing these settings from the user interface (B3) may move them into the database with their own migration.
 
 ### 5. Dates are Swiss calendar dates
 
-"Today" is the date in Europe/Zurich, read from an injected `TimeProvider` so that tests fix it. Without a body, `/issue` uses today and a due date `PaymentTermDays` later (30 by default), and `/mark-paid` uses today. *Overdue* is computed from today when a response is written, as in B1.
+"Today" is the date in Europe/Zurich, read from an injected `TimeProvider` so that tests fix it. Without a body, `/issue` uses today and a due date 30 days later (the usual payment term in Switzerland; the request can give any other due date), and `/mark-paid` uses today. *Overdue* is computed from today when a response is written, as in B1.
 
 ### 6. The payment reference comes from the invoice number
 
@@ -65,6 +64,7 @@ Some banks require a customer identification number at the start of a QR referen
 
 - **One page only.** The canvas of the library has a single page. Instead of splitting an invoice, the API refuses a line that would not fit (409 on `POST /lines`, 400 on `POST /invoices`), so an issued invoice always has a PDF. At least ten one-line descriptions fit; long descriptions take more room.
 - **Regular font only.** The bold font the library embeds contains only the characters of its own headings; printing a name such as `Max Muster & Söhne` in bold fails. Headings of the invoice are therefore in the regular font.
+- **Only printable descriptions are stored.** The regular font covers Basic Latin, Latin-1 (except `ÿ`), Latin Extended-A, `Ș ș Ț ț` and `€`; any other character makes the rendering fail. A description is therefore checked when the line is added, not when the PDF is asked for: the typographic apostrophes, quotes, dashes and ellipsis that word processors and phones insert (`’ ‘ “ ” – — …`) are replaced by their plain equivalents, and a description that still contains a character outside the font is refused with a 400 naming the character (`U+1F600`). The addresses already go through the QR-bill character set, which the font covers apart from `ÿ`.
 - `QrBillRenderer` and `InvoicePdf` are the only classes that use the library (ADR-0002); the payment part goes through the same validation in both.
 
 ### 8. Logs, health and OpenAPI
@@ -79,6 +79,6 @@ No authentication (local, single-user application; the API must not be exposed o
 
 ## Consequences
 
-- The integration tests (`tests/FactureQr.Api.Tests`) start the API in memory with `WebApplicationFactory`, each test against its own database created by the migrations in a PostgreSQL container started by Testcontainers. They cover 200, 201, 400, 404 and 409 for every endpoint, the default dates, the list filters, 20 drafts issued through the API at the same time, the page limit, health, the start-up check of the creditor and the OpenAPI document.
+- The integration tests (`tests/FactureQr.Api.Tests`) start the API in memory with `WebApplicationFactory`, each test against its own database created by the migrations in a PostgreSQL container started by Testcontainers. They cover 200, 201, 400, 404 and 409 for every endpoint, the default dates, the list with its status and overdue flags, the printable-description rule, 20 drafts issued through the API at the same time, the page limit, health, the start-up check of the creditor and the OpenAPI document.
 - The PDF tests do not trust the library that drew the PDF: `PdfQrReader` paints the filled shapes of the payment part found by PdfPig onto a bitmap and decodes the QR code with ZXing.Net; the decoded text is then parsed and compared with the invoice (account, amount, reference, debtor, message), for a QR-IBAN and for a plain IBAN.
 - The front end of B3 can rely on the `errors` keys of a 400 to place messages next to fields, and on 409 to tell the user that the invoice has changed state.

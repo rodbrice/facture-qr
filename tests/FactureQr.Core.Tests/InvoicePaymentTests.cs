@@ -96,6 +96,18 @@ public class InvoicePaymentTests
         Assert.True(InvoicePdf.LinesFitOnOnePage(shortLines.Lines));
     }
 
+    [Fact]
+    public void A_description_with_accented_and_Latin_Extended_characters_is_printed()
+    {
+        var invoice = Invoice.CreateDraft(new Customer(SimonMuster));
+        invoice.AddLine("Développement pour Ștefan Țăranu & Søren Müller (€)", 1m, 100m);
+        invoice.Issue(new InvoiceNumber(2026, 1), new DateOnly(2026, 3, 2), new DateOnly(2026, 4, 1));
+
+        byte[] pdf = InvoicePdf.Render(invoice, WithQrIban);
+
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(pdf, 0, 4));
+    }
+
     private static Invoice Issued(InvoiceNumber number)
     {
         var invoice = Invoice.CreateDraft(new Customer(SimonMuster));

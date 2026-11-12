@@ -14,6 +14,7 @@ namespace FactureQr.Api.Invoices;
 public static class InvoiceEndpoints
 {
     private const string LogCategory = "FactureQr.Api.Invoices";
+    private const int PaymentTermDays = 30;
 
     /// <summary>Maps the endpoints.</summary>
     public static IEndpointRouteBuilder MapInvoiceEndpoints(this IEndpointRouteBuilder app)
@@ -25,8 +26,7 @@ public static class InvoiceEndpoints
             .ProducesValidationProblem();
 
         group.MapGet("/", List)
-            .WithSummary("Lists the invoices, newest first, optionally filtered by status or overdue.")
-            .ProducesValidationProblem();
+            .WithSummary("Lists the invoices, newest first, each with its status and whether it is overdue.");
 
         group.MapGet("/{id:guid}", Get)
             .WithSummary("Returns one invoice with its lines.")
@@ -77,9 +77,14 @@ public static class InvoiceEndpoints
         IReadOnlyList<LineRequest> lines = request.Lines ?? [];
         for (int i = 0; i < lines.Count; i++)
         {
+            if (lines[i] is not LineRequest line)
+            {
+                return Problems.Invalid($"lines[{i}]", "A line is required.");
+            }
+
             try
             {
-                invoice.AddLine(lines[i].Description, lines[i].Quantity, lines[i].UnitPrice);
+                invoice.AddLine(line.Description, line.Quantity, line.UnitPrice);
             }
             catch (InvoiceRuleException e)
             {
@@ -100,25 +105,12 @@ public static class InvoiceEndpoints
         return TypedResults.Created($"/invoices/{invoice.Id}", InvoiceResponse.From(invoice, calendar.Today));
     }
 
-    private static async Task<Ok<List<InvoiceSummary>>> List(
-        InvoiceStatus? status, bool? overdue, FactureQrDbContext db, SwissCalendar calendar, CancellationToken cancellationToken)
+    private static async Task<Ok<List<InvoiceSummary>>> List(FactureQrDbContext db, SwissCalendar calendar, CancellationToken cancellationToken)
     {
         DateOnly today = calendar.Today;
-        IQueryable<Invoice> query = db.Invoices.AsNoTracking();
-        if (status is InvoiceStatus wanted)
-        {
-            query = query.Where(i => i.Status == wanted);
-        }
-
-        if (overdue is bool isOverdue)
-        {
-            query = isOverdue
-                ? query.Where(i => i.Status == InvoiceStatus.Issued && i.DueDate < today)
-                : query.Where(i => i.Status != InvoiceStatus.Issued || i.DueDate >= today);
-        }
 
         // Identifiers are UUID version 7: ordering by them is ordering by creation time.
-        List<Invoice> invoices = await query.OrderByDescending(i => i.Id).ToListAsync(cancellationToken);
+        List<Invoice> invoices = await db.Invoices.AsNoTracking().OrderByDescending(i => i.Id).ToListAsync(cancellationToken);
         return TypedResults.Ok(invoices.Select(i => InvoiceSummary.From(i, today)).ToList());
     }
 
@@ -191,13 +183,12 @@ public static class InvoiceEndpoints
         IssueRequest? request,
         FactureQrDbContext db,
         InvoiceIssuer issuer,
-        InvoicingSettings settings,
         SwissCalendar calendar,
         ILoggerFactory loggers,
         CancellationToken cancellationToken)
     {
         DateOnly issueDate = request?.IssueDate ?? calendar.Today;
-        DateOnly dueDate = request?.DueDate ?? issueDate.AddDays(settings.PaymentTermDays);
+        DateOnly dueDate = request?.DueDate ?? issueDate.AddDays(PaymentTermDays);
         if (issueDate.Year is < InvoiceNumber.MinYear or > InvoiceNumber.MaxYear)
         {
             return Problems.Invalid("issueDate", $"The issue date must be in the years {InvoiceNumber.MinYear} to {InvoiceNumber.MaxYear}.");

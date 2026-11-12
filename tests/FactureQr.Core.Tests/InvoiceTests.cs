@@ -156,6 +156,31 @@ public class InvoiceTests
         Assert.Equal(200, invoice.AddLine(new string('x', 200), 1m, 1m).Description.Length);
     }
 
+    [Theory]
+    [InlineData("Développement d\u2019une fonction", "Développement d'une fonction")]
+    [InlineData("\u2018Analyse\u2019 et \u201Cconseil\u201D", "'Analyse' et \"conseil\"")]
+    [InlineData("Phase 1 \u2013 2 \u2014 3", "Phase 1 - 2 - 3")]
+    [InlineData("Suite\u2026", "Suite...")]
+    public void Typographic_characters_in_a_description_are_stored_as_their_plain_equivalents(string typed, string stored)
+    {
+        var invoice = Draft();
+
+        Assert.Equal(stored, invoice.AddLine(typed, 1m, 1m).Description);
+    }
+
+    [Theory]
+    [InlineData("Analyse \U0001F600", "U+1F600")]
+    [InlineData("Analyse \u2192 conseil", "U+2192")]
+    [InlineData("Ca\u00FFe", "U+00FF")]
+    public void A_description_with_a_character_the_PDF_cannot_print_is_refused_naming_it(string description, string codePoint)
+    {
+        var invoice = Draft();
+
+        var error = Assert.Throws<InvoiceRuleException>(() => invoice.AddLine(description, 1m, 1m));
+        Assert.Contains(codePoint, error.Message);
+        Assert.Empty(invoice.Lines);
+    }
+
     [Fact]
     public void Issuing_sets_the_number_and_the_dates()
     {

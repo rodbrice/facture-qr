@@ -1,4 +1,5 @@
 using System.Net;
+using FactureQr.Api.Customers;
 using FactureQr.Api.Invoices;
 using FactureQr.Core.Billing;
 using UglyToad.PdfPig;
@@ -67,6 +68,25 @@ public class InvoicePdfApiTests(PostgreSqlFixture postgres)
         Assert.Contains("Développement", text);
         Assert.Contains("1'200.00", text);
         Assert.Contains("Simon Muster", text);
+    }
+
+    [Fact]
+    public async Task A_description_typed_with_a_typographic_apostrophe_is_stored_in_plain_form_and_printed()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
+        HttpClient client = api.CreateClient();
+        CustomerResponse customer = await client.CreateCustomerAsync();
+        InvoiceResponse draft = await client.CreateDraftAsync(customer.Id, new LineRequest("Développement d\u2019une fonction pour Ștefan \u2014 1re étape\u2026", 1m, 100m));
+        Assert.Equal(["Développement d'une fonction pour Ștefan - 1re étape..."], draft.Lines.Select(l => l.Description));
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync($"/invoices/{draft.Id}/issue", null)).StatusCode);
+
+        HttpResponseMessage response = await client.GetAsync($"/invoices/{draft.Id}/pdf");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/pdf", response.Content.Headers.ContentType?.MediaType);
+        using PdfDocument document = PdfDocument.Open(await response.Content.ReadAsByteArrayAsync());
+        string text = string.Join(' ', document.GetPage(1).GetWords().Select(w => w.Text));
+        Assert.Contains("d'une fonction pour Ștefan", text);
     }
 
     [Fact]

@@ -5,24 +5,18 @@ namespace FactureQr.Api.Infrastructure;
 
 /// <summary>
 /// The configuration of the independent who issues the invoices, read from the
-/// <c>Invoicing</c> section: the creditor (account and structured address) and
-/// the payment term used when an invoice is issued without a due date.
+/// <c>Invoicing</c> section: the creditor (account and structured address).
 /// </summary>
 /// <param name="Creditor">The account and address printed on every payment part.</param>
-/// <param name="PaymentTermDays">Days between the issue date and the default due date.</param>
-public sealed record InvoicingSettings(CreditorAccount Creditor, int PaymentTermDays)
+public sealed record InvoicingSettings(CreditorAccount Creditor)
 {
-    /// <summary>Payment term when none is configured.</summary>
-    public const int DefaultPaymentTermDays = 30;
-
     /// <summary>Reads and validates the <c>Invoicing</c> section.</summary>
     /// <exception cref="InvalidOperationException">A value is missing or breaks a QR-bill rule; the message names the setting.</exception>
     public static InvoicingSettings Load(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        IConfigurationSection section = configuration.GetSection("Invoicing");
-        IConfigurationSection creditor = section.GetSection("Creditor");
+        IConfigurationSection creditor = configuration.GetSection("Invoicing").GetSection("Creditor");
         try
         {
             var account = Iban.Parse(Required(creditor, "Iban"));
@@ -34,13 +28,7 @@ public sealed record InvoicingSettings(CreditorAccount Creditor, int PaymentTerm
                 Required(creditor, "Town"),
                 Required(creditor, "Country"));
 
-            int term = section.GetValue("PaymentTermDays", DefaultPaymentTermDays);
-            if (term is < 0 or > 365)
-            {
-                throw new InvalidOperationException($"Invoicing:PaymentTermDays must be between 0 and 365 (got {term}).");
-            }
-
-            return new InvoicingSettings(new CreditorAccount(account, address), term);
+            return new InvoicingSettings(new CreditorAccount(account, address));
         }
         catch (QrBillValidationException e)
         {

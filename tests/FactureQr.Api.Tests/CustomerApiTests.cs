@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using FactureQr.Api.Customers;
-using FactureQr.Api.Invoices;
 
 namespace FactureQr.Api.Tests;
 
@@ -81,23 +80,5 @@ public class CustomerApiTests(PostgreSqlFixture postgres)
         HttpClient client = api.CreateClient();
 
         await (await client.GetAsync($"/customers/{Guid.NewGuid()}")).AssertProblemAsync(HttpStatusCode.NotFound);
-        await (await client.PutAsJsonAsync($"/customers/{Guid.NewGuid()}", ApiClient.SimonMuster, ApiClient.Json)).AssertProblemAsync(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task Changing_the_address_does_not_change_the_address_already_copied_onto_an_invoice()
-    {
-        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
-        HttpClient client = api.CreateClient();
-        CustomerResponse customer = await client.CreateCustomerAsync();
-        InvoiceResponse draft = await client.CreateDraftAsync(customer.Id);
-        AddressDto moved = ApiClient.SimonMuster with { Street = "Bahnhofstrasse", BuildingNumber = "7" };
-
-        HttpResponseMessage response = await client.PutAsJsonAsync($"/customers/{customer.Id}", moved, ApiClient.Json);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(moved, (await response.ReadAsync<CustomerResponse>()).Address);
-        InvoiceResponse invoice = (await client.GetFromJsonAsync<InvoiceResponse>($"/invoices/{draft.Id}", ApiClient.Json))!;
-        Assert.Equal(ApiClient.SimonMuster, invoice.BillTo);
     }
 }

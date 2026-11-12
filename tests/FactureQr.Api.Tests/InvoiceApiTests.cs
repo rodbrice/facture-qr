@@ -89,7 +89,7 @@ public class InvoiceApiTests(PostgreSqlFixture postgres)
     }
 
     [Fact]
-    public async Task The_list_is_filtered_by_status_and_by_overdue()
+    public async Task The_list_carries_the_status_and_whether_each_invoice_is_overdue()
     {
         await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
         HttpClient client = api.CreateClient();
@@ -100,19 +100,12 @@ public class InvoiceApiTests(PostgreSqlFixture postgres)
         InvoiceResponse paid = await client.CreateIssuedAsync(new DateOnly(2026, 9, 1), new DateOnly(2026, 10, 1));
         await client.PostAsJsonAsync($"/invoices/{paid.Id}/mark-paid", new MarkPaidRequest(new DateOnly(2026, 10, 15)), ApiClient.Json);
 
-        async Task<List<InvoiceSummary>> ListAsync(string query) =>
-            await client.GetFromJsonAsync<List<InvoiceSummary>>($"/invoices{query}", ApiClient.Json) ?? [];
+        List<InvoiceSummary> all = await client.GetFromJsonAsync<List<InvoiceSummary>>("/invoices", ApiClient.Json) ?? [];
 
-        List<InvoiceSummary> all = await ListAsync(string.Empty);
         Assert.Equal([paid.Id, current.Id, overdue.Id, draft.Id], all.Select(i => i.Id));
+        Assert.Equal([InvoiceStatus.Paid, InvoiceStatus.Issued, InvoiceStatus.Issued, InvoiceStatus.Draft], all.Select(i => i.Status));
         Assert.Equal([false, false, true, false], all.Select(i => i.Overdue));
         Assert.Equal("Simon Muster", all[0].CustomerName);
-
-        Assert.Equal([current.Id, overdue.Id], (await ListAsync("?status=Issued")).Select(i => i.Id));
-        Assert.Equal([draft.Id], (await ListAsync("?status=Draft")).Select(i => i.Id));
-        Assert.Equal([overdue.Id], (await ListAsync("?overdue=true")).Select(i => i.Id));
-        Assert.Equal([paid.Id, current.Id, draft.Id], (await ListAsync("?overdue=false")).Select(i => i.Id));
-        await (await client.GetAsync("/invoices?status=Cancelled")).AssertProblemAsync(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -144,6 +137,7 @@ public class InvoiceApiTests(PostgreSqlFixture postgres)
 
         await (await client.PostAsJsonAsync("/invoices", new CreateInvoiceRequest(Guid.NewGuid(), null), ApiClient.Json)).AssertInvalidFieldAsync("customerId");
         await (await client.PostAsJsonAsync("/invoices", new CreateInvoiceRequest(customer.Id, [new("Analyse", 1m, 1m), new("Trop précis", 1.0001m, 1m)]), ApiClient.Json)).AssertInvalidFieldAsync("lines[1]");
+        await (await client.PostAsync("/invoices", new StringContent($$"""{ "customerId": "{{customer.Id}}", "lines": [null] }""", System.Text.Encoding.UTF8, "application/json"))).AssertInvalidFieldAsync("lines[0]");
         await (await client.PostAsJsonAsync($"/invoices/{draft.Id}/lines", new LineRequest(" ", 1m, 1m), ApiClient.Json)).AssertInvalidFieldAsync("line");
         await (await client.PostAsJsonAsync($"/invoices/{draft.Id}/lines", new LineRequest("Analyse", 1m, 1_000_000_000m), ApiClient.Json)).AssertInvalidFieldAsync("line");
         await (await client.PostAsJsonAsync($"/invoices/{draft.Id}/issue", new IssueRequest(new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 1)), ApiClient.Json)).AssertInvalidFieldAsync("dueDate");
@@ -189,6 +183,23 @@ public class InvoiceApiTests(PostgreSqlFixture postgres)
         // The refused issue of the empty draft did not use up a number.
         InvoiceResponse next = await client.CreateIssuedAsync();
         Assert.Equal("2026-0002", next.Number);
+    }
+
+    [Fact]
+    public async Task A_description_with_a_character_the_PDF_cannot_print_is_refused_with_400_naming_it()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
+        HttpClient client = api.CreateClient();
+        CustomerResponse customer = await client.CreateCustomerAsync();
+        InvoiceResponse draft = await client.CreateDraftAsync(customer.Id);
+
+        HttpResponseMessage added = await client.PostAsJsonAsync($"/invoices/{draft.Id}/lines", new LineRequest("Analyse \U0001F600", 1m, 100m), ApiClient.Json);
+        HttpResponseMessage created = await client.PostAsJsonAsync("/invoices", new CreateInvoiceRequest(customer.Id, [new("Analyse", 1m, 1m), new("Conseil \U0001F600", 1m, 1m)]), ApiClient.Json);
+
+        Assert.Contains("U+1F600", await added.AssertInvalidFieldAsync("line"));
+        Assert.Contains("U+1F600", await created.AssertInvalidFieldAsync("lines[1]"));
+        Assert.Empty((await client.GetFromJsonAsync<InvoiceResponse>($"/invoices/{draft.Id}", ApiClient.Json))!.Lines);
+        Assert.Single(await client.GetFromJsonAsync<List<InvoiceSummary>>("/invoices", ApiClient.Json) ?? []);
     }
 
     [Fact]

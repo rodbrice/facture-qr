@@ -34,7 +34,6 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:FactureQr", connectionString);
-        builder.UseSetting("Invoicing:PaymentTermDays", "30");
         builder.UseSetting("Invoicing:Creditor:Name", "Max Muster & Söhne");
         builder.UseSetting("Invoicing:Creditor:Street", "Musterstrasse");
         builder.UseSetting("Invoicing:Creditor:BuildingNumber", "123");

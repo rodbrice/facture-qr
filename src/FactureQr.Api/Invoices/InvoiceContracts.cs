@@ -4,7 +4,7 @@ using FactureQr.Core.Invoicing;
 namespace FactureQr.Api.Invoices;
 
 /// <summary>A line to add to a draft.</summary>
-/// <param name="Description">What is invoiced, at most 200 characters, on one line.</param>
+/// <param name="Description">What is invoiced, at most 200 characters, on one line. Typographic apostrophes, quotes, dashes and the ellipsis are replaced by their plain equivalents; a character the PDF cannot print is refused.</param>
 /// <param name="Quantity">Greater than 0, at most three decimals.</param>
 /// <param name="UnitPrice">Price of one unit in CHF, 0 or more, at most two decimals.</param>
 public sealed record LineRequest(string Description, decimal Quantity, decimal UnitPrice);
@@ -16,7 +16,7 @@ public sealed record CreateInvoiceRequest(Guid CustomerId, IReadOnlyList<LineReq
 
 /// <summary>The dates of an issue. Both may be omitted.</summary>
 /// <param name="IssueDate">The issue date; today in Switzerland when omitted.</param>
-/// <param name="DueDate">The due date; the issue date plus the configured payment term when omitted.</param>
+/// <param name="DueDate">The due date; the issue date plus 30 days when omitted.</param>
 public sealed record IssueRequest(DateOnly? IssueDate, DateOnly? DueDate);
 
 /// <summary>The date a payment was received.</summary>
