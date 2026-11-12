@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>FactureQr.Core</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Swiss QR-bill core: structured addresses, payment references and rendering of the payment part (CHF).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Codecrete.SwissQRBill.Generator" Version="3.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FactureQr.Core.Tests" />
+  </ItemGroup>
+
+</Project>

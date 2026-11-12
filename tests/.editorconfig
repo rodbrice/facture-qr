@@ -1,0 +1,3 @@
+# Test projects: descriptive test names with underscores are the convention.
+[*.cs]
+dotnet_diagnostic.CA1707.severity = none
