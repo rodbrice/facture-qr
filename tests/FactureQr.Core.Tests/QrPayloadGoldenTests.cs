@@ -25,7 +25,10 @@ public class QrPayloadGoldenTests
     public void Qr_code_text_matches_the_expected_file_line_by_line(string id)
     {
         QrBillRequest request = SyntheticSamples.All.Single(s => s.Id == id).Request;
-        string expected = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", $"sample-{id}.expected.txt")).Replace("\r\n", "\n", StringComparison.Ordinal);
+        // The payload contract has no trailing line break (IG v2.4, chapter 4.1.4); an editor may add one to the fixture file, so it is ignored.
+        string expected = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", $"sample-{id}.expected.txt"))
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .TrimEnd('\n');
 
         string actual = QrBillRenderer.EncodeQrCodeText(request);
 

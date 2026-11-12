@@ -103,17 +103,16 @@ public class PaymentReferenceTests
     [Theory]
     [InlineData("")]
     [InlineData("1234567890123456789012")] // 22 characters: too long
-    [InlineData("ABC 123")]                // spaces are removed, but
-    [InlineData("ABC-123")]                // other characters are rejected
+    [InlineData("ABC-123")]                // characters other than letters and digits
     public void CreateCreditorReference_rejects_bad_input(string body)
     {
-        if (body == "ABC 123")
-        {
-            Assert.Equal("RF47ABC123", PaymentReference.CreateCreditorReference(body).Value);
-            return;
-        }
-
         Assert.Throws<QrBillValidationException>(() => PaymentReference.CreateCreditorReference(body));
+    }
+
+    [Fact]
+    public void CreateCreditorReference_ignores_spaces()
+    {
+        Assert.Equal("RF47ABC123", PaymentReference.CreateCreditorReference("ABC 123").Value);
     }
 
     [Fact]

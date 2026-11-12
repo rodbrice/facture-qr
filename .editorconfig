@@ -16,6 +16,10 @@ indent_size = 2
 [*.md]
 trim_trailing_whitespace = false
 
+# QR code payloads end without a line break (IG v2.4, chapter 4.1.4); keep the files exactly as the payload.
+[*.{expected,qr}.txt]
+insert_final_newline = false
+
 [*.cs]
 # Organisation
 dotnet_sort_system_directives_first = true

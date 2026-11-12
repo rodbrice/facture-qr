@@ -14,22 +14,22 @@ public static class QrBillRenderer
     /// <summary>Validates the request and returns the text encoded in the Swiss QR Code (31 lines separated by LF).</summary>
     /// <exception cref="QrBillValidationException">The library reports an error or a warning for the data.</exception>
     public static string EncodeQrCodeText(QrBillRequest request) =>
-        QRBill.EncodeQrCodeText(ValidatedBill(request, GraphicsFormat.PDF, OutputSize.QrBillOnly, BillLanguage.French, 0));
+        QRBill.EncodeQrCodeText(ValidatedBill(request, GraphicsFormat.PDF, OutputSize.QrBillOnly, 0));
 
-    /// <summary>Validates the request and renders the payment part with receipt (210 × 105 mm) as a PDF.</summary>
+    /// <summary>Validates the request and renders the payment part with receipt (210 × 105 mm) as a PDF, with French headings.</summary>
     /// <exception cref="QrBillValidationException">The library reports an error or a warning for the data.</exception>
-    public static byte[] RenderPdf(QrBillRequest request, BillLanguage language = BillLanguage.French) =>
-        QRBill.Generate(ValidatedBill(request, GraphicsFormat.PDF, OutputSize.QrBillOnly, language, 0));
+    public static byte[] RenderPdf(QrBillRequest request) =>
+        QRBill.Generate(ValidatedBill(request, GraphicsFormat.PDF, OutputSize.QrBillOnly, 0));
 
-    /// <summary>Validates the request and renders the payment part with receipt as a PNG (for previews and visual checks).</summary>
+    /// <summary>Validates the request and renders the payment part with receipt as a PNG (for previews and visual checks), with French headings.</summary>
     /// <exception cref="QrBillValidationException">The library reports an error or a warning for the data.</exception>
-    public static byte[] RenderPng(QrBillRequest request, BillLanguage language = BillLanguage.French, int resolutionDpi = 200) =>
-        QRBill.Generate(ValidatedBill(request, GraphicsFormat.PNG, OutputSize.QrBillOnly, language, resolutionDpi));
+    public static byte[] RenderPng(QrBillRequest request, int resolutionDpi = 200) =>
+        QRBill.Generate(ValidatedBill(request, GraphicsFormat.PNG, OutputSize.QrBillOnly, resolutionDpi));
 
     /// <summary>Validates the request and renders the Swiss QR Code alone, with its quiet zone, as a PNG (the file the SIX validation portal accepts).</summary>
     /// <exception cref="QrBillValidationException">The library reports an error or a warning for the data.</exception>
     public static byte[] RenderQrCodePng(QrBillRequest request, int resolutionDpi = 300) =>
-        QRBill.Generate(ValidatedBill(request, GraphicsFormat.PNG, OutputSize.QrCodeWithQuietZone, BillLanguage.French, resolutionDpi));
+        QRBill.Generate(ValidatedBill(request, GraphicsFormat.PNG, OutputSize.QrCodeWithQuietZone, resolutionDpi));
 
     /// <summary>Decodes the text of a Swiss QR Code back into a request (the reverse of <see cref="EncodeQrCodeText"/>).</summary>
     /// <exception cref="QrBillValidationException">The text is not a valid Swiss QR Code, or it breaks one of our rules (for example EUR).</exception>
@@ -62,8 +62,8 @@ public static class QrBillRenderer
             bill.Currency);
     }
 
-    /// <summary>Maps the request to the library's model.</summary>
-    internal static Bill ToBill(QrBillRequest request, GraphicsFormat graphicsFormat, OutputSize outputSize, BillLanguage language, int resolutionDpi)
+    /// <summary>Maps the request to the library's model. The printed headings are in French (the language of the samples).</summary>
+    internal static Bill ToBill(QrBillRequest request, GraphicsFormat graphicsFormat, OutputSize outputSize, int resolutionDpi)
     {
         var bill = new Bill
         {
@@ -79,7 +79,7 @@ public static class QrBillRenderer
             {
                 GraphicsFormat = graphicsFormat,
                 OutputSize = outputSize,
-                Language = ToLanguage(language),
+                Language = Language.FR,
                 SeparatorType = SeparatorType.DashedLineWithScissors,
             },
         };
@@ -92,10 +92,10 @@ public static class QrBillRenderer
         return bill;
     }
 
-    private static Bill ValidatedBill(QrBillRequest request, GraphicsFormat graphicsFormat, OutputSize outputSize, BillLanguage language, int resolutionDpi)
+    private static Bill ValidatedBill(QrBillRequest request, GraphicsFormat graphicsFormat, OutputSize outputSize, int resolutionDpi)
     {
         ArgumentNullException.ThrowIfNull(request);
-        Bill bill = ToBill(request, graphicsFormat, outputSize, language, resolutionDpi);
+        Bill bill = ToBill(request, graphicsFormat, outputSize, resolutionDpi);
         ValidationResult result = QRBill.Validate(bill);
 
         // A warning means the library had to clean or clip a value; the output would differ from the input.
@@ -122,14 +122,4 @@ public static class QrBillRenderer
 
     private static StructuredAddress FromAddress(Address address) =>
         new(address.Name, address.Street, address.HouseNo, address.PostalCode, address.Town, address.CountryCode);
-
-    private static Language ToLanguage(BillLanguage language) => language switch
-    {
-        BillLanguage.German => Language.DE,
-        BillLanguage.French => Language.FR,
-        BillLanguage.Italian => Language.IT,
-        BillLanguage.Romansh => Language.RM,
-        BillLanguage.English => Language.EN,
-        _ => throw new ArgumentOutOfRangeException(nameof(language), language, "Unknown language."),
-    };
 }

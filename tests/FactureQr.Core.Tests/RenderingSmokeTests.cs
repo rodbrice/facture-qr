@@ -26,15 +26,6 @@ public class RenderingSmokeTests
     }
 
     [Fact]
-    public void Pdf_can_be_rendered_in_every_language()
-    {
-        foreach (BillLanguage language in Enum.GetValues<BillLanguage>())
-        {
-            Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(QrBillRenderer.RenderPdf(SyntheticSamples.A, language), 0, 4));
-        }
-    }
-
-    [Fact]
     public void Qr_code_png_starts_with_the_png_signature()
     {
         byte[] png = QrBillRenderer.RenderQrCodePng(SyntheticSamples.A);
