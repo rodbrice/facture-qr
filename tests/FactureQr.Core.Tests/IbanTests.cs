@@ -11,6 +11,7 @@ public class IbanTests
     [InlineData("CH58 0079 1123 0008 8901 2", false)]  // IG v2.4 Annex A example 4: IID 00791
     [InlineData("CH52 0483 5012 3456 7100 0", false)]  // IG v2.4 Annex A example 3: IID 04835
     [InlineData("ch5800791123000889012", false)]
+    [InlineData("LI21 0881 0000 2324 013A A", false)]  // IBAN registry example for Liechtenstein: letters in the account part
     public void Parses_valid_ibans_and_detects_qr_ibans(string text, bool isQrIban)
     {
         Iban iban = Iban.Parse(text);
@@ -27,6 +28,8 @@ public class IbanTests
     [InlineData("DE89 3704 0044 0532 0130 00", "21 characters")]
     [InlineData("DE44 3199 9123 0008 8901 2", "CH or LI")]
     [InlineData("CH44 3199 9123 0008 890A 2", "digits")]
+    [InlineData("LI21 088A 0000 2324 013A A", "institution identifier")]
+    [InlineData("LI21 0881 0000 2324 013A B", "check digits")]
     [InlineData("", "21 characters")]
     public void Rejects_invalid_ibans(string text, string expectedReason)
     {

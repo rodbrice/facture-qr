@@ -23,6 +23,10 @@ The first unit (B0) is deliberately a spike with production-quality tests, not a
 
 5. **Only synthetic data.** Every IBAN, name and address in tests, samples and documentation comes from the examples in Annex A of the IG. No real person, company or account appears in the repository.
 
+6. **A full payment-part preview per sample, as a deliberate addition.** Besides the PDF, the cropped QR image and the QR text that B0 requires, each sample is also rendered as a PNG of the whole payment part (`docs/samples/sample-{a,b,c}.png`, produced by `QrBillRenderer.RenderPng`). It is the visible demonstration embedded in the README and the image on which the visual check against the Style Guide grid is measured in `docs/validation/B0.md`.
+
+7. **A console tool that regenerates the samples, as a deliberate addition.** `tools/FactureQr.Samples` is the one tool beyond the listed scope. It exists so that every file under `docs/samples/` is reproducible by a single command rather than by hand, and it only calls the public methods of `QrBillRenderer`.
+
 ## Consequences
 
 - The next units can build the invoice aggregate, the API and the UI on a core whose correctness is already demonstrated by golden tests, round-trip tests and the external validation recorded in `docs/validation/`.

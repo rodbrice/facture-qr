@@ -3,6 +3,8 @@ namespace FactureQr.Core.Billing;
 /// <summary>
 /// A Swiss or Liechtenstein IBAN (ISO 13616) as accepted in a QR-bill:
 /// 21 characters, country code CH or LI, valid modulo-97 check digits.
+/// The Swiss account part is numeric; the Liechtenstein account part
+/// (positions 10 to 21) may contain letters, as in the IBAN registry.
 /// A QR-IBAN is an IBAN whose institution identifier (positions 5 to 9)
 /// lies in the QR-IID range 30000–31999; it may only be used with a QR reference.
 /// </summary>
@@ -51,9 +53,14 @@ public sealed record Iban
             throw new QrBillValidationException(field, "only letters and digits are permitted.");
         }
 
-        if (!value.Skip(2).All(char.IsAsciiDigit))
+        if (!value[2..9].All(char.IsAsciiDigit))
         {
-            throw new QrBillValidationException(field, "positions 3 to 21 of a CH/LI IBAN must be digits.");
+            throw new QrBillValidationException(field, "positions 3 to 9 (check digits and institution identifier) must be digits.");
+        }
+
+        if (value.StartsWith("CH", StringComparison.Ordinal) && !value.Skip(9).All(char.IsAsciiDigit))
+        {
+            throw new QrBillValidationException(field, "positions 10 to 21 of a Swiss IBAN must be digits.");
         }
 
         if (Modulo97.Remainder(value[4..] + value[..4]) != 1)

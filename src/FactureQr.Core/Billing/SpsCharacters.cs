@@ -18,30 +18,32 @@ public static class SpsCharacters
     public static bool IsAllowed(string text) => text.All(IsAllowed);
 
     /// <summary>
-    /// Validates a text field: trims it, checks its length and its characters.
-    /// Returns the trimmed text, or null when the field is optional and empty.
+    /// Validates a text field: trims it, collapses runs of spaces into one
+    /// (the form the QR-bill library prints, so the model always equals the
+    /// printed bill), checks its length and its characters.
+    /// Returns the normalised text, or null when the field is optional and empty.
     /// </summary>
     internal static string? Validate(string field, string? text, int maxLength, bool required)
     {
-        string? trimmed = text?.Trim();
-        if (string.IsNullOrEmpty(trimmed))
+        string? value = text is null ? null : string.Join(' ', text.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        if (string.IsNullOrEmpty(value))
         {
             return required
                 ? throw new QrBillValidationException(field, "the value is required.")
                 : null;
         }
 
-        if (trimmed.Length > maxLength)
+        if (value.Length > maxLength)
         {
-            throw new QrBillValidationException(field, $"at most {maxLength} characters are permitted (got {trimmed.Length}).");
+            throw new QrBillValidationException(field, $"at most {maxLength} characters are permitted (got {value.Length}).");
         }
 
-        int bad = trimmed.ToList().FindIndex(c => !IsAllowed(c));
+        int bad = value.ToList().FindIndex(c => !IsAllowed(c));
         if (bad >= 0)
         {
-            throw new QrBillValidationException(field, $"the character '{trimmed[bad]}' (U+{(int)trimmed[bad]:X4}) is outside the permitted character set.");
+            throw new QrBillValidationException(field, $"the character '{value[bad]}' (U+{(int)value[bad]:X4}) is outside the permitted character set.");
         }
 
-        return trimmed;
+        return value;
     }
 }

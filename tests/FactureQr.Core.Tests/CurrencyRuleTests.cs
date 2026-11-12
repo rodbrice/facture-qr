@@ -14,6 +14,8 @@ public class CurrencyRuleTests
     [InlineData("EUR")]
     [InlineData("eur")]
     [InlineData("USD")]
+    [InlineData("chf")]
+    [InlineData(" CHF ")]
     [InlineData("")]
     public void EUR_and_any_other_currency_are_refused_with_a_clear_message(string currency)
     {
@@ -22,15 +24,6 @@ public class CurrencyRuleTests
         Assert.Equal("Currency", e.Field);
         Assert.Contains("only CHF is supported", e.Message, StringComparison.Ordinal);
         Assert.Contains("ADR-0001", e.Message, StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData("CHF")]
-    [InlineData("chf")]
-    [InlineData(" CHF ")]
-    public void CHF_is_accepted_in_any_case(string currency)
-    {
-        Assert.Equal("CHF", new QrBillRequest(PlainIban, Creditor, Scor, 10m, currency: currency).Currency);
     }
 
     [Fact]

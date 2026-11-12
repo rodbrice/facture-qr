@@ -19,6 +19,15 @@ public class StructuredAddressTests
     }
 
     [Fact]
+    public void Collapses_runs_of_spaces_into_one_as_the_printed_bill_does()
+    {
+        var address = new StructuredAddress("Max  Muster", "Grosse   Marktgasse", "28", "9400", "Rorschach", "CH");
+
+        Assert.Equal("Max Muster", address.Name);
+        Assert.Equal("Grosse Marktgasse", address.Street);
+    }
+
+    [Fact]
     public void Street_and_building_number_are_optional()
     {
         var address = new StructuredAddress("Muster Stiftung", null, "  ", "3001", "Bern", "CH");

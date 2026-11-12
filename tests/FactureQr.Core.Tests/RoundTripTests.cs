@@ -50,6 +50,22 @@ public class RoundTripTests
     }
 
     [Fact]
+    public void Round_trip_of_a_name_and_message_typed_with_double_spaces()
+    {
+        var request = new QrBillRequest(
+            Iban.Parse("CH58 0079 1123 0008 8901 2"),
+            new StructuredAddress("Max  Muster", "Musterstrasse", "123", "8000", "Seldwyla", "CH"),
+            PaymentReference.None,
+            message: "Invoice  2026-001");
+
+        QrBillRequest decoded = QrBillRenderer.DecodeQrCodeText(QrBillRenderer.EncodeQrCodeText(request));
+
+        Assert.Equal("Max Muster", request.Creditor.Name);
+        Assert.Equal("Invoice 2026-001", request.Message);
+        Assert.Equal(request, decoded);
+    }
+
+    [Fact]
     public void Decoding_a_EUR_bill_is_refused_by_our_currency_rule()
     {
         string eurText = QrBillRenderer.EncodeQrCodeText(SyntheticSamples.B).Replace("\nCHF\n", "\nEUR\n", StringComparison.Ordinal);

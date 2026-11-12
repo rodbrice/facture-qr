@@ -92,13 +92,12 @@ public sealed record QrBillRequest
 
     private static string ValidateCurrency(string? currency)
     {
-        string value = (currency ?? string.Empty).Trim().ToUpperInvariant();
-        if (value != SupportedCurrency)
+        if (!string.Equals(currency, SupportedCurrency, StringComparison.Ordinal))
         {
-            throw new QrBillValidationException("Currency", $"only {SupportedCurrency} is supported in this version (got '{value}'); invoicing in EUR is out of scope, see ADR-0001.");
+            throw new QrBillValidationException("Currency", $"only {SupportedCurrency} is supported in this version (got '{currency}'); invoicing in EUR is out of scope, see ADR-0001.");
         }
 
-        return value;
+        return SupportedCurrency;
     }
 
     private static decimal? ValidateAmount(decimal? amount)
