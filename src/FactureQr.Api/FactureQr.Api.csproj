@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>FactureQr.Api</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>HTTP API of Facture QR: customers, invoices, issuing, payment and the invoice PDF with its QR-bill.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../FactureQr.Core/FactureQr.Core.csproj" />
+    <ProjectReference Include="../FactureQr.Persistence/FactureQr.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>
