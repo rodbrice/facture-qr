@@ -31,6 +31,9 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
+// A body that cannot be bound is a 400 in every environment. By default Development throws
+// instead, and the exception handler would turn that into a 500.
+builder.Services.PostConfigure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = false);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 builder.Services.AddOpenApi();

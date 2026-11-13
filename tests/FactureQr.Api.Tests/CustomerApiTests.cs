@@ -87,6 +87,17 @@ public class CustomerApiTests(PostgreSqlFixture postgres)
     }
 
     [Fact]
+    public async Task Broken_JSON_is_refused_with_400_when_the_API_runs_in_the_Development_environment()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync(), environment: "Development");
+        HttpClient client = api.CreateClient();
+
+        HttpResponseMessage response = await client.PostAsync("/customers", new StringContent("""{ "name": "Simon Muster", """, System.Text.Encoding.UTF8, "application/json"));
+
+        await response.AssertProblemAsync(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task An_unknown_customer_is_answered_with_404()
     {
         await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
