@@ -50,6 +50,6 @@ jobs:
           FACTUREQR_DATABASE: Host=localhost;Database=facture_qr;Username=postgres;Password=postgres
         run: dotnet ef database update --no-build --configuration Release --project src/FactureQr.Persistence
 
-      # The persistence tests start their own PostgreSQL with Testcontainers (Docker is available on the runner).
+      # The persistence and API tests start their own PostgreSQL with Testcontainers (Docker is available on the runner).
       - name: Test
         run: dotnet test --no-build --configuration Release

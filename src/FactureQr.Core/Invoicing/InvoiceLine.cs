@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace FactureQr.Core.Invoicing;
 
 /// <summary>
@@ -54,9 +56,21 @@ public sealed class InvoiceLine
     /// <summary>Quantity × unit price, rounded to the centime.</summary>
     public decimal Amount { get; private set; }
 
+    // The typographic characters word processors and phones insert, with the plain
+    // equivalents the invoice PDF can print.
+    private static readonly (string Typographic, string Plain)[] TypographicCharacters =
+    [
+        ("\u2018", "'"), ("\u2019", "'"), ("\u201C", "\""), ("\u201D", "\""), ("\u2013", "-"), ("\u2014", "-"), ("\u2026", "..."),
+    ];
+
     private static string ValidateDescription(string? description)
     {
         string value = (description ?? string.Empty).Trim();
+        foreach ((string typographic, string plain) in TypographicCharacters)
+        {
+            value = value.Replace(typographic, plain, StringComparison.Ordinal);
+        }
+
         if (value.Length == 0)
         {
             throw new InvoiceRuleException("A line needs a description.");
@@ -70,6 +84,11 @@ public sealed class InvoiceLine
         if (value.Any(char.IsControl))
         {
             throw new InvoiceRuleException("A line description cannot contain control characters such as line breaks or tabs.");
+        }
+
+        if (InvoicePdf.FirstUnprintable(value) is Rune character)
+        {
+            throw new InvoiceRuleException($"A line description cannot contain the character '{character}' (U+{character.Value:X4}): the invoice PDF cannot print it.");
         }
 
         return value;

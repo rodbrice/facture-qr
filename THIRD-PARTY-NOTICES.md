@@ -65,6 +65,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 <https://github.com/testcontainers/testcontainers-dotnet> — MIT License, © Andre Hofmeister and other authors. Same licence text as above, with that copyright line. Used only by the test project and not distributed with the library.
 
+## ASP.NET Core and its OpenAPI support (Microsoft.AspNetCore.OpenApi, Microsoft.AspNetCore.Mvc.Testing)
+
+<https://github.com/dotnet/aspnetcore> — MIT License, © .NET Foundation and Contributors. Same licence text as above, with that copyright line. `Microsoft.AspNetCore.Mvc.Testing` is used only by the API tests.
+
+## PdfPig (tests only)
+
+<https://github.com/UglyToad/PdfPig> — Apache License 2.0: <https://www.apache.org/licenses/LICENSE-2.0>. Used only by the API tests, to read the text and the drawing of the served PDF.
+
+## ZXing.Net (tests only)
+
+<https://github.com/micjahn/ZXing.Net> — Apache License 2.0: <https://www.apache.org/licenses/LICENSE-2.0>. Used only by the API tests, to decode the QR code redrawn from the served PDF.
+
 ## Liberation Sans (font subset embedded in generated PDFs)
 
 SwissQRBill.NET embeds a subset of the Liberation Sans font in the PDF files it produces. Liberation Fonts are licensed under the SIL Open Font License, Version 1.1: <https://github.com/liberationfonts/liberation-fonts/blob/main/LICENSE>.

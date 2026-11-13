@@ -4,10 +4,11 @@ namespace FactureQr.Core.Billing;
 
 /// <summary>
 /// Turns a <see cref="QrBillRequest"/> into the Swiss QR Code text, a PDF of
-/// the payment part with receipt, or a PNG of the QR code. This is the only
-/// place that talks to the SwissQRBill.NET library (see ADR-0002): the
-/// request is validated by our own rules first, then by the library, and only
-/// then rendered.
+/// the payment part with receipt, or a PNG of the QR code. Together with
+/// <see cref="Invoicing.InvoicePdf"/>, which draws a whole invoice page around
+/// the payment part, this is the only code that talks to the SwissQRBill.NET
+/// library (see ADR-0002 and ADR-0004): the request is validated by our own
+/// rules first, then by the library, and only then rendered.
 /// </summary>
 public static class QrBillRenderer
 {
@@ -92,7 +93,7 @@ public static class QrBillRenderer
         return bill;
     }
 
-    private static Bill ValidatedBill(QrBillRequest request, GraphicsFormat graphicsFormat, OutputSize outputSize, int resolutionDpi)
+    internal static Bill ValidatedBill(QrBillRequest request, GraphicsFormat graphicsFormat, OutputSize outputSize, int resolutionDpi)
     {
         ArgumentNullException.ThrowIfNull(request);
         Bill bill = ToBill(request, graphicsFormat, outputSize, resolutionDpi);
