@@ -141,6 +141,8 @@ public class InvoiceApiTests(PostgreSqlFixture postgres)
         await (await client.PostAsJsonAsync($"/invoices/{draft.Id}/lines", new LineRequest(" ", 1m, 1m), ApiClient.Json)).AssertInvalidFieldAsync("line");
         await (await client.PostAsJsonAsync($"/invoices/{draft.Id}/lines", new LineRequest("Analyse", 1m, 1_000_000_000m), ApiClient.Json)).AssertInvalidFieldAsync("line");
         await (await client.PostAsJsonAsync($"/invoices/{draft.Id}/issue", new IssueRequest(new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 1)), ApiClient.Json)).AssertInvalidFieldAsync("dueDate");
+        await (await client.PostAsJsonAsync($"/invoices/{draft.Id}/issue", new IssueRequest(new DateOnly(1999, 12, 31), null), ApiClient.Json)).AssertInvalidFieldAsync("issueDate");
+        await (await client.PostAsJsonAsync($"/invoices/{draft.Id}/issue", new IssueRequest(new DateOnly(9999, 12, 15), null), ApiClient.Json)).AssertInvalidFieldAsync("issueDate");
 
         InvoiceResponse unchanged = (await client.GetFromJsonAsync<InvoiceResponse>($"/invoices/{draft.Id}", ApiClient.Json))!;
         Assert.Equal(InvoiceStatus.Draft, unchanged.Status);

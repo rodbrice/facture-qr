@@ -188,12 +188,17 @@ public static class InvoiceEndpoints
         CancellationToken cancellationToken)
     {
         DateOnly issueDate = request?.IssueDate ?? calendar.Today;
-        DateOnly dueDate = request?.DueDate ?? issueDate.AddDays(PaymentTermDays);
         if (issueDate.Year is < InvoiceNumber.MinYear or > InvoiceNumber.MaxYear)
         {
             return Problems.Invalid("issueDate", $"The issue date must be in the years {InvoiceNumber.MinYear} to {InvoiceNumber.MaxYear}.");
         }
 
+        if (request?.DueDate is null && issueDate.DayNumber > DateOnly.MaxValue.DayNumber - PaymentTermDays)
+        {
+            return Problems.Invalid("issueDate", $"No due date exists {PaymentTermDays} days after {issueDate:yyyy-MM-dd}; give a due date.");
+        }
+
+        DateOnly dueDate = request?.DueDate ?? issueDate.AddDays(PaymentTermDays);
         if (dueDate < issueDate)
         {
             return Problems.Invalid("dueDate", $"The due date {dueDate:yyyy-MM-dd} is before the issue date {issueDate:yyyy-MM-dd}.");
