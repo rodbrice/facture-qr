@@ -34,17 +34,16 @@ public static class CustomerEndpoints
     private static async Task<Results<Created<CustomerResponse>, ValidationProblem>> Create(
         AddressDto address, FactureQrDbContext db, ILoggerFactory loggers, CancellationToken cancellationToken)
     {
-        StructuredAddress validated;
+        Customer customer;
         try
         {
-            validated = address.ToStructuredAddress();
+            customer = new Customer(address.ToStructuredAddress());
         }
         catch (QrBillValidationException e)
         {
             return Problems.Invalid(Problems.JsonName(e.Field), e.Message);
         }
 
-        var customer = new Customer(validated);
         db.Customers.Add(customer);
         await db.SaveChangesAsync(cancellationToken);
         ILogger logger = loggers.CreateLogger(LogCategory);

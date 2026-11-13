@@ -20,7 +20,7 @@ public sealed record AddressDto(string Name, string? Street, string? BuildingNum
         return new(address.Name, address.Street, address.BuildingNumber, address.PostalCode, address.Town, address.Country);
     }
 
-    /// <summary>Validates the address with the QR-bill rules.</summary>
+    /// <summary>Validates the address with the QR-bill rules; <see cref="Customer"/> then checks that the PDF can print it.</summary>
     /// <exception cref="QrBillValidationException">A field breaks a rule; the exception names it.</exception>
     public StructuredAddress ToStructuredAddress() => new(Name, Street, BuildingNumber, PostalCode, Town, Country);
 }

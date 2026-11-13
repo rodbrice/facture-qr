@@ -182,6 +182,19 @@ public class InvoiceTests
     }
 
     [Fact]
+    public void A_customer_address_with_a_character_the_PDF_cannot_print_is_refused_naming_the_field()
+    {
+        // ÿ is in the QR-bill character set but not in the font of the PDF.
+        var address = new StructuredAddress("Simon Muster", "Rue de la Paix", "1", "94240", "L'Ha\u00FF-les-Roses", "FR");
+
+        var error = Assert.Throws<QrBillValidationException>(() => new Customer(address));
+
+        Assert.Equal("Town", error.Field);
+        Assert.Contains("U+00FF", error.Message);
+        Assert.Throws<QrBillValidationException>(() => new Customer(SimonMuster).ChangeAddress(address));
+    }
+
+    [Fact]
     public void Issuing_sets_the_number_and_the_dates()
     {
         var invoice = Draft();

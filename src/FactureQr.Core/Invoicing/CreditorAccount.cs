@@ -8,5 +8,16 @@ namespace FactureQr.Core.Invoicing;
 /// payment part. The address must be the one of the account holder.
 /// </summary>
 /// <param name="Account">The IBAN or QR-IBAN that receives the payments.</param>
-/// <param name="Address">The structured address of the account holder.</param>
-public sealed record CreditorAccount(Iban Account, StructuredAddress Address);
+/// <param name="Address">The structured address of the account holder, limited to the characters the invoice PDF can print.</param>
+/// <exception cref="QrBillValidationException">A field of the address contains a character the invoice PDF cannot print.</exception>
+public sealed record CreditorAccount(Iban Account, StructuredAddress Address)
+{
+    /// <summary>The structured address of the account holder.</summary>
+    public StructuredAddress Address { get; } = Printable(Address);
+
+    private static StructuredAddress Printable(StructuredAddress address)
+    {
+        InvoicePdf.EnsurePrintable(address);
+        return address;
+    }
+}

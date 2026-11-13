@@ -20,11 +20,13 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 
     private readonly string connectionString;
     private readonly string iban;
+    private readonly string town;
 
-    public ApiFactory(string connectionString, string iban = QrIban)
+    public ApiFactory(string connectionString, string iban = QrIban, string town = "Seldwyla")
     {
         this.connectionString = connectionString;
         this.iban = iban;
+        this.town = town;
     }
 
     /// <summary>The date the API sees as today.</summary>
@@ -38,7 +40,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Invoicing:Creditor:Street", "Musterstrasse");
         builder.UseSetting("Invoicing:Creditor:BuildingNumber", "123");
         builder.UseSetting("Invoicing:Creditor:PostalCode", "8000");
-        builder.UseSetting("Invoicing:Creditor:Town", "Seldwyla");
+        builder.UseSetting("Invoicing:Creditor:Town", town);
         builder.UseSetting("Invoicing:Creditor:Country", "CH");
         builder.UseSetting("Invoicing:Creditor:Iban", iban);
         builder.ConfigureServices(services =>

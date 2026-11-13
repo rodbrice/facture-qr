@@ -26,7 +26,7 @@ The invoice model (`Invoicing/`):
 
 | Type | Responsibility |
 |---|---|
-| `Customer` | A customer with a structured address. |
+| `Customer` | A customer with a structured address, limited to the characters the invoice PDF can print (the QR-bill character set also allows `ÿ`, which the font of the PDF lacks). |
 | `Invoice` | An invoice in CHF to one customer, with its lines. States `Draft` → `Issued` → `Paid`; only a draft can change. The total is always the sum of the lines and stays within the QR-bill range (at most 999 999 999.99 CHF; at least 0.01 CHF to be issued). Issuing sets the number, the issue date and the due date. The customer's address is copied onto the invoice, so issued invoices do not change when the customer moves. Overdue is derived from the due date, not stored. |
 | `InvoiceLine` | Description, quantity (up to three decimals), unit price; amount = quantity × unit price rounded to the centime. The description is limited to the characters the PDF can print; typographic apostrophes, quotes and dashes are replaced by plain ones. |
 | `InvoiceNumber` | Year of the issue date and a sequence that restarts every year, printed as `2026-0001`. |

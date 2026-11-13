@@ -4,14 +4,16 @@ namespace FactureQr.Core.Invoicing;
 
 /// <summary>
 /// A customer of the independent. The address is a QR-bill structured
-/// address, so it can be printed as the debtor of the payment part.
+/// address limited to the characters the invoice PDF can print, so it can be
+/// printed as the debtor of the payment part.
 /// </summary>
 public sealed class Customer
 {
     /// <summary>Creates a customer with a new identifier.</summary>
+    /// <exception cref="QrBillValidationException">A field of the address contains a character the invoice PDF cannot print.</exception>
     public Customer(StructuredAddress address)
     {
-        ArgumentNullException.ThrowIfNull(address);
+        InvoicePdf.EnsurePrintable(address);
 
         Id = Guid.CreateVersion7();
         Address = address;
@@ -33,9 +35,10 @@ public sealed class Customer
     /// Replaces the address. Invoices already created keep the address they
     /// copied when they were created.
     /// </summary>
+    /// <exception cref="QrBillValidationException">A field of the address contains a character the invoice PDF cannot print.</exception>
     public void ChangeAddress(StructuredAddress address)
     {
-        ArgumentNullException.ThrowIfNull(address);
+        InvoicePdf.EnsurePrintable(address);
 
         Address = address;
     }

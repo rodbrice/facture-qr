@@ -52,6 +52,17 @@ public class InvoicePaymentTests
     }
 
     [Fact]
+    public void A_creditor_address_with_a_character_the_PDF_cannot_print_is_refused_naming_the_field()
+    {
+        var address = new StructuredAddress("Max Muster & S\u00FFhne", "Musterstrasse", "123", "8000", "Seldwyla", "CH");
+
+        var error = Assert.Throws<QrBillValidationException>(() => new CreditorAccount(WithQrIban.Account, address));
+
+        Assert.Equal("Name", error.Field);
+        Assert.Contains("U+00FF", error.Message);
+    }
+
+    [Fact]
     public void A_draft_has_no_payment_part()
     {
         var draft = Invoice.CreateDraft(new Customer(SimonMuster));

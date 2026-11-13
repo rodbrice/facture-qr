@@ -59,6 +59,19 @@ public class CustomerApiTests(PostgreSqlFixture postgres)
         Assert.Empty(await client.GetFromJsonAsync<List<CustomerResponse>>("/customers", ApiClient.Json) ?? []);
     }
 
+    [Fact]
+    public async Task An_address_with_a_character_the_PDF_cannot_print_is_refused_with_400_naming_the_field_and_the_character()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
+        HttpClient client = api.CreateClient();
+        var address = new AddressDto("Simon Muster", "Rue de la Paix", "1", "94240", "L'Ha\u00FF-les-Roses", "FR");
+
+        HttpResponseMessage response = await client.PostAsJsonAsync("/customers", address, ApiClient.Json);
+
+        Assert.Contains("U+00FF", await response.AssertInvalidFieldAsync("town"));
+        Assert.Empty(await client.GetFromJsonAsync<List<CustomerResponse>>("/customers", ApiClient.Json) ?? []);
+    }
+
     [Theory]
     [InlineData("""{ "street": "Musterstrasse", "postalCode": "8000", "town": "Seldwyla", "country": "CH" }""")]
     [InlineData("""{ "name": null, "postalCode": "8000", "town": "Seldwyla", "country": "CH" }""")]

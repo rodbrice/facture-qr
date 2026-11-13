@@ -76,7 +76,7 @@ public static class InvoicePdf
     /// True when the regular font of the PDF contains the character: Basic Latin,
     /// Latin-1 Supplement except ÿ, Latin Extended-A, Ș ș Ț ț and €. Any other
     /// character makes <see cref="Render"/> fail, so text that will be printed is
-    /// checked with this before it is stored.
+    /// checked with <see cref="FirstUnprintable"/> before it is stored.
     /// </summary>
     public static bool CanPrint(Rune character) =>
         character.Value is (>= 0x20 and <= 0x7E)
@@ -84,6 +84,52 @@ public static class InvoicePdf
             or (>= 0x100 and <= 0x17F)
             or (>= 0x218 and <= 0x21B)
             or 0x20AC;
+
+    /// <summary>
+    /// The first character of the text the regular font of the PDF cannot print,
+    /// or null when the whole text can be printed.
+    /// </summary>
+    public static Rune? FirstUnprintable(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        foreach (Rune character in text.EnumerateRunes())
+        {
+            if (!CanPrint(character))
+            {
+                return character;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Checks that every field of an address can be printed on the PDF. The
+    /// character set of the QR-bill is wider than the font by one character, ÿ,
+    /// so an address the QR code accepts can still make <see cref="Render"/> fail.
+    /// </summary>
+    /// <exception cref="QrBillValidationException">A field contains a character the font cannot print; the exception names the field.</exception>
+    public static void EnsurePrintable(StructuredAddress address)
+    {
+        ArgumentNullException.ThrowIfNull(address);
+
+        (string Field, string? Text)[] fields =
+        [
+            ("Name", address.Name),
+            ("Street", address.Street),
+            ("Building number", address.BuildingNumber),
+            ("Postal code", address.PostalCode),
+            ("Town", address.Town),
+        ];
+        foreach ((string field, string? text) in fields)
+        {
+            if (text is not null && FirstUnprintable(text) is Rune character)
+            {
+                throw new QrBillValidationException(field, $"the character '{character}' (U+{character.Value:X4}) cannot be printed on the invoice PDF.");
+            }
+        }
+    }
 
     /// <summary>
     /// True when the lines fit in the table of one page above the payment part.

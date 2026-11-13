@@ -86,12 +86,9 @@ public sealed class InvoiceLine
             throw new InvoiceRuleException("A line description cannot contain control characters such as line breaks or tabs.");
         }
 
-        foreach (Rune character in value.EnumerateRunes())
+        if (InvoicePdf.FirstUnprintable(value) is Rune character)
         {
-            if (!InvoicePdf.CanPrint(character))
-            {
-                throw new InvoiceRuleException($"A line description cannot contain the character '{character}' (U+{character.Value:X4}): the invoice PDF cannot print it.");
-            }
+            throw new InvoiceRuleException($"A line description cannot contain the character '{character}' (U+{character.Value:X4}): the invoice PDF cannot print it.");
         }
 
         return value;

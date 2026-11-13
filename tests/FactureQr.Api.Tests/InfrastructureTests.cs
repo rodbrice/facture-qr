@@ -38,6 +38,17 @@ public class InfrastructureTests(PostgreSqlFixture postgres)
         Assert.Contains("Invoicing:Creditor", error.Message);
     }
 
+    [Fact]
+    public async Task The_API_does_not_start_with_a_creditor_address_the_PDF_cannot_print()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync(), town: "L'Ha\u00FF-les-Roses");
+
+        var error = Assert.Throws<InvalidOperationException>(() => api.CreateClient());
+        Assert.Contains("Invoicing:Creditor", error.Message);
+        Assert.Contains("Town", error.Message);
+        Assert.Contains("U+00FF", error.Message);
+    }
+
     /// <summary>
     /// The OpenAPI document served by the API is committed under docs/api so it
     /// can be read without running the API. This test fails when the two differ;
