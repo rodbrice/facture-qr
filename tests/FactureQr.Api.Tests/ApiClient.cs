@@ -12,7 +12,7 @@ public static class ApiClient
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
 
-    public static readonly AddressDto SimonMuster = new("Simon Muster", "Musterstrasse", "1", "8000", "Seldwyla", "CH");
+    public static readonly AddressDto SimonMuster = new("Simon Muster", "8000", "Seldwyla", "CH", "Musterstrasse", "1");
 
     public static async Task<CustomerResponse> CreateCustomerAsync(this HttpClient client, AddressDto? address = null)
     {

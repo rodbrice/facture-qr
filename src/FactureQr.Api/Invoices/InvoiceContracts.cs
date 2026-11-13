@@ -12,16 +12,16 @@ public sealed record LineRequest(string Description, decimal Quantity, decimal U
 /// <summary>A new draft for a customer, optionally with its first lines.</summary>
 /// <param name="CustomerId">The customer; the draft copies the customer's current address.</param>
 /// <param name="Lines">The lines to add, in order; may be omitted.</param>
-public sealed record CreateInvoiceRequest(Guid CustomerId, IReadOnlyList<LineRequest>? Lines);
+public sealed record CreateInvoiceRequest(Guid CustomerId, IReadOnlyList<LineRequest>? Lines = null);
 
 /// <summary>The dates of an issue. Both may be omitted.</summary>
 /// <param name="IssueDate">The issue date; today in Switzerland when omitted.</param>
 /// <param name="DueDate">The due date; the issue date plus 30 days when omitted.</param>
-public sealed record IssueRequest(DateOnly? IssueDate, DateOnly? DueDate);
+public sealed record IssueRequest(DateOnly? IssueDate = null, DateOnly? DueDate = null);
 
 /// <summary>The date a payment was received.</summary>
 /// <param name="PaidOn">The payment date; today in Switzerland when omitted. Not before the issue date, not in the future.</param>
-public sealed record MarkPaidRequest(DateOnly? PaidOn);
+public sealed record MarkPaidRequest(DateOnly? PaidOn = null);
 
 /// <summary>A line of an invoice.</summary>
 /// <param name="Id">The identifier, used to remove the line from a draft.</param>

@@ -549,8 +549,6 @@
       "AddressDto": {
         "required": [
           "name",
-          "street",
-          "buildingNumber",
           "postalCode",
           "town",
           "country"
@@ -560,20 +558,6 @@
           "name": {
             "type": "string",
             "description": "Name of the person or company, at most 70 characters."
-          },
-          "street": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "Street or P.O. box, at most 70 characters."
-          },
-          "buildingNumber": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "Building number, at most 16 characters."
           },
           "postalCode": {
             "type": "string",
@@ -586,14 +570,27 @@
           "country": {
             "type": "string",
             "description": "Two-letter ISO 3166-1 country code, for example CH."
+          },
+          "street": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Street or P.O. box, at most 70 characters; may be omitted."
+          },
+          "buildingNumber": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Building number, at most 16 characters; may be omitted."
           }
         },
         "description": "A structured address as the QR-bill requires it (no combined address lines)."
       },
       "CreateInvoiceRequest": {
         "required": [
-          "customerId",
-          "lines"
+          "customerId"
         ],
         "type": "object",
         "properties": {
@@ -858,10 +855,6 @@
         "description": "An invoice in a list, without its lines."
       },
       "IssueRequest": {
-        "required": [
-          "issueDate",
-          "dueDate"
-        ],
         "type": "object",
         "properties": {
           "issueDate": {
@@ -976,9 +969,6 @@
         "description": "A line of an invoice."
       },
       "MarkPaidRequest": {
-        "required": [
-          "paidOn"
-        ],
         "type": "object",
         "properties": {
           "paidOn": {

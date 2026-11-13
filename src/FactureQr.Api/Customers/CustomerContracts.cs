@@ -5,19 +5,19 @@ namespace FactureQr.Api.Customers;
 
 /// <summary>A structured address as the QR-bill requires it (no combined address lines).</summary>
 /// <param name="Name">Name of the person or company, at most 70 characters.</param>
-/// <param name="Street">Street or P.O. box, at most 70 characters.</param>
-/// <param name="BuildingNumber">Building number, at most 16 characters.</param>
 /// <param name="PostalCode">Postal code without country prefix, at most 16 characters.</param>
 /// <param name="Town">Town, at most 35 characters.</param>
 /// <param name="Country">Two-letter ISO 3166-1 country code, for example CH.</param>
-public sealed record AddressDto(string Name, string? Street, string? BuildingNumber, string PostalCode, string Town, string Country)
+/// <param name="Street">Street or P.O. box, at most 70 characters; may be omitted.</param>
+/// <param name="BuildingNumber">Building number, at most 16 characters; may be omitted.</param>
+public sealed record AddressDto(string Name, string PostalCode, string Town, string Country, string? Street = null, string? BuildingNumber = null)
 {
     /// <summary>Copies a stored address.</summary>
     public static AddressDto From(StructuredAddress address)
     {
         ArgumentNullException.ThrowIfNull(address);
 
-        return new(address.Name, address.Street, address.BuildingNumber, address.PostalCode, address.Town, address.Country);
+        return new(address.Name, address.PostalCode, address.Town, address.Country, address.Street, address.BuildingNumber);
     }
 
     /// <summary>Validates the address with the QR-bill rules; <see cref="Customer"/> then checks that the PDF can print it.</summary>

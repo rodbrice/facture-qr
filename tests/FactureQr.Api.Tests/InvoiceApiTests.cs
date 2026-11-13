@@ -128,6 +128,32 @@ public class InvoiceApiTests(PostgreSqlFixture postgres)
     }
 
     [Fact]
+    public async Task Bodies_that_omit_the_optional_fields_are_accepted_like_explicit_nulls()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
+        HttpClient client = api.CreateClient();
+        CustomerResponse customer = await client.CreateCustomerAsync();
+
+        HttpResponseMessage created = await client.PostAsync("/invoices", JsonBody($$"""{ "customerId": "{{customer.Id}}" }"""));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        InvoiceResponse draft = await created.ReadAsync<InvoiceResponse>();
+        Assert.Empty(draft.Lines);
+        await client.PostAsJsonAsync($"/invoices/{draft.Id}/lines", new LineRequest("Analyse", 1m, 100m), ApiClient.Json);
+
+        HttpResponseMessage issued = await client.PostAsync($"/invoices/{draft.Id}/issue", JsonBody("""{ "issueDate": "2026-11-12" }"""));
+        Assert.Equal(HttpStatusCode.OK, issued.StatusCode);
+        InvoiceResponse invoice = await issued.ReadAsync<InvoiceResponse>();
+        Assert.Equal(new DateOnly(2026, 11, 12), invoice.IssueDate);
+        Assert.Equal(new DateOnly(2026, 12, 12), invoice.DueDate);
+
+        HttpResponseMessage paid = await client.PostAsync($"/invoices/{draft.Id}/mark-paid", JsonBody("{}"));
+        Assert.Equal(HttpStatusCode.OK, paid.StatusCode);
+        Assert.Equal(ApiFactory.Today, (await paid.ReadAsync<InvoiceResponse>()).PaidOn);
+    }
+
+    private static StringContent JsonBody(string json) => new(json, System.Text.Encoding.UTF8, "application/json");
+
+    [Fact]
     public async Task Invalid_requests_are_refused_with_400_and_change_nothing()
     {
         await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());

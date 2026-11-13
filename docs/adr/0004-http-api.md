@@ -38,7 +38,7 @@ Every error has a ProblemDetails body (RFC 9457, `application/problem+json`).
 
 The handlers check the 404 and the obvious state conflicts themselves before calling the domain. The rules that only the domain knows (for example "an invoice needs a line to be issued") raise `InvoiceRuleException`, which `DomainExceptionHandler` turns into a 409; nothing is saved in that case, and a refused issue does not use up a number because the transaction of ADR-0003 is rolled back. Any other exception is a 500 without details.
 
-The JSON options reject a missing or null value for a non-nullable property (`RespectNullableAnnotations`, `RespectRequiredConstructorParameters`) instead of silently using a default. Enum values are written as names (`"Issued"`). A body that cannot be bound is a 400 in every environment: the Development default of ASP.NET Core, which throws instead, is turned off so that it does not become a 500 through the exception handler.
+The JSON options reject a missing or null value for a non-nullable property (`RespectNullableAnnotations`, `RespectRequiredConstructorParameters`) instead of silently using a default. A nullable property (`dueDate`, `lines`, `street`, `buildingNumber`) has a default of null in the record, so a client may omit the key instead of sending null; the OpenAPI document lists only the non-nullable properties as required. Enum values are written as names (`"Issued"`). A body that cannot be bound is a 400 in every environment: the Development default of ASP.NET Core, which throws instead, is turned off so that it does not become a 500 through the exception handler.
 
 ### 3. Validation reuses the domain
 

@@ -31,7 +31,7 @@ public class CustomerApiTests(PostgreSqlFixture postgres)
         await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
         HttpClient client = api.CreateClient();
         await client.CreateCustomerAsync(ApiClient.SimonMuster);
-        await client.CreateCustomerAsync(new AddressDto("Pia-Maria Rutschmann-Schnyder", "Grosse Marktgasse", "28", "9400", "Rorschach", "CH"));
+        await client.CreateCustomerAsync(new AddressDto("Pia-Maria Rutschmann-Schnyder", "9400", "Rorschach", "CH", "Grosse Marktgasse", "28"));
 
         List<CustomerResponse> customers = await client.GetFromJsonAsync<List<CustomerResponse>>("/customers", ApiClient.Json) ?? [];
 
@@ -64,12 +64,26 @@ public class CustomerApiTests(PostgreSqlFixture postgres)
     {
         await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
         HttpClient client = api.CreateClient();
-        var address = new AddressDto("Simon Muster", "Rue de la Paix", "1", "94240", "L'Ha\u00FF-les-Roses", "FR");
+        var address = new AddressDto("Simon Muster", "94240", "L'Ha\u00FF-les-Roses", "FR", "Rue de la Paix", "1");
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/customers", address, ApiClient.Json);
 
         Assert.Contains("U+00FF", await response.AssertInvalidFieldAsync("town"));
         Assert.Empty(await client.GetFromJsonAsync<List<CustomerResponse>>("/customers", ApiClient.Json) ?? []);
+    }
+
+    [Fact]
+    public async Task An_address_whose_body_omits_the_street_and_building_number_keys_is_accepted_with_201()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
+        HttpClient client = api.CreateClient();
+        const string body = """{ "name": "Simon Muster", "postalCode": "8000", "town": "Seldwyla", "country": "CH" }""";
+
+        HttpResponseMessage response = await client.PostAsync("/customers", new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        CustomerResponse customer = await response.ReadAsync<CustomerResponse>();
+        Assert.Equal(ApiClient.SimonMuster with { Street = null, BuildingNumber = null }, customer.Address);
     }
 
     [Theory]
