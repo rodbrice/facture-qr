@@ -49,6 +49,34 @@ public class InfrastructureTests(PostgreSqlFixture postgres)
         Assert.Contains("U+00FF", error.Message);
     }
 
+    [Fact]
+    public async Task The_built_front_end_is_served_at_the_root_and_on_its_page_paths_while_unknown_API_paths_stay_404()
+    {
+        string webRoot = Directory.CreateTempSubdirectory("facture-qr-web-").FullName;
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(webRoot, "index.html"), "<!doctype html><title>Facture QR</title>");
+            await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync(), webRoot: webRoot);
+            HttpClient client = api.CreateClient();
+
+            foreach (string path in new[] { "/", "/clients", "/clients/nouveau", "/factures/0199a0c4-0000-7000-8000-000000000000", "/parametres" })
+            {
+                HttpResponseMessage page = await client.GetAsync(path);
+                Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+                Assert.Equal("text/html", page.Content.Headers.ContentType?.MediaType);
+                Assert.Contains("<title>Facture QR</title>", await page.Content.ReadAsStringAsync());
+            }
+
+            Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/invoices/not-an-identifier")).StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/unknown")).StatusCode);
+            Assert.Equal("application/json", (await client.GetAsync("/customers")).Content.Headers.ContentType?.MediaType);
+        }
+        finally
+        {
+            Directory.Delete(webRoot, recursive: true);
+        }
+    }
+
     /// <summary>
     /// The OpenAPI document served by the API is committed under docs/api so it
     /// can be read without running the API. This test fails when the two differ;
@@ -74,6 +102,7 @@ public class InfrastructureTests(PostgreSqlFixture postgres)
         JsonElement paths = document.RootElement.GetProperty("paths");
         Assert.True(paths.TryGetProperty("/invoices/{id}/pdf", out _));
         Assert.True(paths.TryGetProperty("/customers", out _));
+        Assert.True(paths.TryGetProperty("/settings/creditor", out _));
     }
 
     // Indented, with a final line break, so that the committed file is readable and diffs well.

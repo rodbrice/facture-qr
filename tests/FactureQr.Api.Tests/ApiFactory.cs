@@ -22,13 +22,15 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     private readonly string iban;
     private readonly string town;
     private readonly string environment;
+    private readonly string? webRoot;
 
-    public ApiFactory(string connectionString, string iban = QrIban, string town = "Seldwyla", string environment = "Testing")
+    public ApiFactory(string connectionString, string iban = QrIban, string town = "Seldwyla", string environment = "Testing", string? webRoot = null)
     {
         this.connectionString = connectionString;
         this.iban = iban;
         this.town = town;
         this.environment = environment;
+        this.webRoot = webRoot;
     }
 
     /// <summary>The date the API sees as today.</summary>
@@ -37,6 +39,11 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(environment);
+        if (webRoot is not null)
+        {
+            builder.UseWebRoot(webRoot);
+        }
+
         builder.UseSetting("ConnectionStrings:FactureQr", connectionString);
         builder.UseSetting("Invoicing:Creditor:Name", "Max Muster & Söhne");
         builder.UseSetting("Invoicing:Creditor:Street", "Musterstrasse");

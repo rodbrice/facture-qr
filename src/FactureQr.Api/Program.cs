@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using FactureQr.Api.Customers;
 using FactureQr.Api.Infrastructure;
 using FactureQr.Api.Invoices;
+using FactureQr.Api.Settings;
 using FactureQr.Persistence;
 using Microsoft.AspNetCore.HttpLogging;
 
@@ -54,10 +55,22 @@ app.UseHttpLogging();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
+// The front end (web/), when it has been built into wwwroot: index.html at the root and its assets.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapOpenApi();
 app.MapHealthChecks("/health");
 app.MapCustomerEndpoints();
 app.MapInvoiceEndpoints();
+app.MapSettingsEndpoints();
+
+// The pages of the front end are routed in the browser; reloading one of them serves index.html.
+// Only these French paths are covered, so an unknown API path stays a 404.
+foreach (string page in FrontEnd.Pages)
+{
+    app.MapFallbackToFile(page, "index.html");
+}
 
 app.Run();
 
