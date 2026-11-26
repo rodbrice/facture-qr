@@ -23,14 +23,22 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     private readonly string town;
     private readonly string environment;
     private readonly string? webRoot;
+    private readonly IReadOnlyDictionary<string, string>? settings;
 
-    public ApiFactory(string connectionString, string iban = QrIban, string town = "Seldwyla", string environment = "Testing", string? webRoot = null)
+    public ApiFactory(
+        string connectionString,
+        string iban = QrIban,
+        string town = "Seldwyla",
+        string environment = "Testing",
+        string? webRoot = null,
+        IReadOnlyDictionary<string, string>? settings = null)
     {
         this.connectionString = connectionString;
         this.iban = iban;
         this.town = town;
         this.environment = environment;
         this.webRoot = webRoot;
+        this.settings = settings;
     }
 
     /// <summary>The date the API sees as today.</summary>
@@ -52,6 +60,11 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Invoicing:Creditor:Town", town);
         builder.UseSetting("Invoicing:Creditor:Country", "CH");
         builder.UseSetting("Invoicing:Creditor:Iban", iban);
+        foreach ((string key, string value) in settings ?? new Dictionary<string, string>())
+        {
+            builder.UseSetting(key, value);
+        }
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<TimeProvider>();

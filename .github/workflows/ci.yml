@@ -118,3 +118,33 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  compose:
+    name: Docker Compose demo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Build and start the demo
+        run: docker compose up --build --detach
+
+      # The API applies the migrations and adds the synthetic data before it answers.
+      - name: Check the demo answers with the synthetic data
+        run: |
+          for attempt in $(seq 1 60); do
+            curl --silent --fail http://127.0.0.1:8080/health && break
+            sleep 2
+          done
+          curl --silent --fail http://127.0.0.1:8080/health
+          curl --silent --fail http://127.0.0.1:8080/ | grep --quiet '<div id="root">'
+          test "$(curl --silent --fail http://127.0.0.1:8080/invoices | jq length)" -eq 5
+          test "$(curl --silent --fail http://127.0.0.1:8080/customers | jq length)" -eq 5
+
+      - name: Show the logs of the demo
+        if: ${{ !cancelled() }}
+        run: docker compose logs
+
+      - name: Stop the demo
+        if: ${{ always() }}
+        run: docker compose down --volumes

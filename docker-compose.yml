@@ -1,0 +1,46 @@
+# Local demo: PostgreSQL and the API serving the front end, with synthetic data (ADR-0006).
+# The application has no authentication: it is published on 127.0.0.1 only and must not be
+# exposed on a network (see "Security" in the README).
+
+name: facture-qr
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: facture_qr
+      POSTGRES_USER: facture_qr
+      # Only the app container reaches the database: no port of it is published.
+      POSTGRES_PASSWORD: facture_qr_demo
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U facture_qr -d facture_qr"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # FACTUREQR_PORT changes the port on this computer (8080 by default).
+      - "127.0.0.1:${FACTUREQR_PORT:-8080}:8080"
+    environment:
+      ConnectionStrings__FactureQr: Host=db;Database=facture_qr;Username=facture_qr;Password=facture_qr_demo;GSS Encryption Mode=Disable
+      # Apply the migrations, then fill an empty database with the synthetic data.
+      Database__ApplyMigrations: "true"
+      Demo__SeedSyntheticData: "true"
+      # The synthetic creditor of the samples (Annex A of the SIX Implementation Guidelines).
+      Invoicing__Creditor__Name: Max Muster & Söhne
+      Invoicing__Creditor__Street: Musterstrasse
+      Invoicing__Creditor__BuildingNumber: "123"
+      Invoicing__Creditor__PostalCode: "8000"
+      Invoicing__Creditor__Town: Seldwyla
+      Invoicing__Creditor__Country: CH
+      Invoicing__Creditor__Iban: CH44 3199 9123 0008 8901 2
+
+volumes:
+  db-data:

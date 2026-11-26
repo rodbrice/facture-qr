@@ -20,14 +20,18 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
     /// <summary>Creates a new database, applies every migration to it and returns its connection string.</summary>
     public async Task<string> CreateMigratedDatabaseAsync()
     {
-        var builder = new NpgsqlConnectionStringBuilder(container.GetConnectionString())
-        {
-            Database = $"facture_qr_{Guid.NewGuid():N}",
-        };
-        await using var db = new FactureQrDbContext(FactureQrDbContext.CreateOptions(builder.ConnectionString));
+        string connectionString = NewDatabase();
+        await using var db = new FactureQrDbContext(FactureQrDbContext.CreateOptions(connectionString));
         await db.Database.MigrateAsync();
-        return builder.ConnectionString;
+        return connectionString;
     }
+
+    /// <summary>
+    /// Returns the connection string of a database that does not exist yet;
+    /// applying the migrations creates it.
+    /// </summary>
+    public string NewDatabase() =>
+        new NpgsqlConnectionStringBuilder(container.GetConnectionString()) { Database = $"facture_qr_{Guid.NewGuid():N}" }.ConnectionString;
 }
 
 [CollectionDefinition(Name)]
