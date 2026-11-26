@@ -9,7 +9,7 @@ COPY web/ ./
 RUN npm run build
 
 # 2. The API, published with the built front end.
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS api
 WORKDIR /src
 COPY global.json Directory.Build.props .editorconfig ./
 COPY src/FactureQr.Core/FactureQr.Core.csproj src/FactureQr.Core/
