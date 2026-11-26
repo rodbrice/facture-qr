@@ -1,0 +1,11 @@
+# Only the sources the Dockerfile copies are needed; build output and dependencies are rebuilt inside.
+.git/
+**/bin/
+**/obj/
+**/node_modules/
+web/test-results/
+web/playwright-report/
+src/FactureQr.Api/wwwroot/
+docs/
+tests/
+tools/

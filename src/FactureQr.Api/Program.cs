@@ -46,6 +46,10 @@ builder.Services.AddSingleton(services => InvoicingSettings.Load(services.GetReq
 builder.Services.AddScoped(services => new FactureQrDbContext(FactureQrDbContext.CreateOptions(ConnectionString(services))));
 builder.Services.AddScoped<InvoiceIssuer>();
 
+// Migrations and synthetic data at start, both off unless configured (docker compose demo, ADR-0006).
+// Hosted services start before the server, so the first request sees the finished database.
+builder.Services.AddHostedService<DatabaseStartup>();
+
 WebApplication app = builder.Build();
 
 // Fail at startup, not at the first PDF, when the creditor is missing or invalid.
@@ -54,6 +58,9 @@ app.Services.GetRequiredService<InvoicingSettings>();
 app.UseHttpLogging();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+
+// No authentication: a page of another site open in the same browser must not change data (ADR-0007).
+app.UseCrossSiteRequestRefusal();
 
 // The front end (web/), when it has been built into wwwroot: index.html at the root and its assets.
 app.UseDefaultFiles();

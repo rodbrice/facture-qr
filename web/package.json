@@ -1,7 +1,7 @@
 {
   "name": "facture-qr-web",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Front end of Facture QR: customers, invoices, issuing, payment and the invoice PDF.",
   "license": "MIT",
   "type": "module",

@@ -28,4 +28,20 @@ public static partial class ApiLog
     /// <summary>An issued invoice was marked as paid.</summary>
     [LoggerMessage(Level = LogLevel.Information, Message = "Invoice {InvoiceNumber} marked as paid on {PaidOn}")]
     public static partial void InvoicePaid(ILogger logger, InvoiceNumber? invoiceNumber, DateOnly paidOn);
+
+    /// <summary>A request that would change data came from another site and was refused.</summary>
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Cross-site {Method} {Path} refused")]
+    public static partial void CrossSiteRequestRefused(ILogger logger, string method, PathString path);
+
+    /// <summary>The migrations were applied when the API started.</summary>
+    [LoggerMessage(Level = LogLevel.Information, Message = "Database migrations applied: {PendingCount} were pending")]
+    public static partial void MigrationsApplied(ILogger logger, int pendingCount);
+
+    /// <summary>The synthetic demo data was added to an empty database.</summary>
+    [LoggerMessage(Level = LogLevel.Information, Message = "Synthetic demo data added: {CustomerCount} customers, {InvoiceCount} invoices")]
+    public static partial void SyntheticDataSeeded(ILogger logger, int customerCount, int invoiceCount);
+
+    /// <summary>The synthetic demo data was not added because the database already holds data.</summary>
+    [LoggerMessage(Level = LogLevel.Information, Message = "Synthetic demo data not added: the database is not empty")]
+    public static partial void SyntheticDataSkipped(ILogger logger);
 }
