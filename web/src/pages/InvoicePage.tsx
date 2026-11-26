@@ -22,26 +22,32 @@ export function InvoicePage() {
   const { data: invoice, loading, error, setData } = useResource(load)
   const [notice, setNotice] = useState('')
   const [lineErrors, setLineErrors] = useState<string[]>([])
+  const [removing, setRemoving] = useState(false)
   usePageTitle(invoice ? title(invoice) : 'Facture')
 
   async function addLine(line: NewLine) {
     setData(await api.addLine(id, line))
+    setLineErrors([])
     setNotice('Ligne ajoutée.')
   }
 
   async function removeLine(lineId: string, position: number) {
+    setRemoving(true)
     try {
       setData(await api.removeLine(id, lineId))
       setLineErrors([])
       setNotice(`Ligne ${position} supprimée.`)
     } catch (e) {
       setLineErrors(formErrors(e, []).form)
+    } finally {
+      setRemoving(false)
     }
   }
 
   async function issue(dates: IssueDates) {
     const issued = await api.issue(id, dates)
     setData(issued)
+    setLineErrors([])
     setNotice(`Facture émise sous le numéro ${issued.number}.`)
   }
 
@@ -135,7 +141,7 @@ export function InvoicePage() {
                       <td className="amount">{formatChf(line.amount)}</td>
                       {invoice.status === 'Draft' && (
                         <td>
-                          <button type="button" className="secondary" onClick={() => removeLine(line.id, line.position)} aria-label={`Supprimer la ligne ${line.position}`}>
+                          <button type="button" className="secondary" onClick={() => removeLine(line.id, line.position)} disabled={removing} aria-label={`Supprimer la ligne ${line.position}`}>
                             Supprimer
                           </button>
                         </td>

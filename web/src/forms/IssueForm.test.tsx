@@ -5,6 +5,11 @@ import { ApiError, type IssueDates } from '../api'
 import { IssueForm } from './IssueForm'
 import { MarkPaidForm } from './MarkPaidForm'
 
+/** jsdom never reports a partly typed date, so the browser's badInput flag is set by hand. */
+function markPartlyTyped(input: HTMLElement) {
+  Object.defineProperty(input, 'validity', { configurable: true, get: () => ({ badInput: true }) })
+}
+
 describe('IssueForm', () => {
   it('leaves empty dates out, so the API uses today and 30 days later', async () => {
     const onIssue = vi.fn<(dates: IssueDates) => Promise<void>>().mockResolvedValue()
@@ -13,6 +18,23 @@ describe('IssueForm', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Émettre' }))
 
     expect(onIssue).toHaveBeenCalledWith({ issueDate: undefined, dueDate: undefined })
+  })
+
+  it('refuses partly typed dates instead of issuing with the default dates', async () => {
+    const onIssue = vi.fn<(dates: IssueDates) => Promise<void>>().mockResolvedValue()
+    render(<IssueForm onIssue={onIssue} />)
+    const issueDate = screen.getByLabelText("Date d'émission")
+    const dueDate = screen.getByLabelText('Échéance')
+    markPartlyTyped(issueDate)
+    markPartlyTyped(dueDate)
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Émettre' }))
+
+    expect(onIssue).not.toHaveBeenCalled()
+    expect(issueDate).toHaveAttribute('aria-invalid', 'true')
+    expect(issueDate).toHaveAccessibleDescription(/Date incomplète\./)
+    expect(dueDate).toHaveAccessibleDescription(/Date incomplète\./)
+    expect(issueDate).toHaveFocus()
   })
 
   it('shows a refused due date next to the due date field', async () => {
@@ -42,6 +64,20 @@ describe('IssueForm', () => {
 })
 
 describe('MarkPaidForm', () => {
+  it('refuses a partly typed payment date instead of recording today', async () => {
+    const onMarkPaid = vi.fn<(paidOn?: string) => Promise<void>>().mockResolvedValue()
+    render(<MarkPaidForm onMarkPaid={onMarkPaid} />)
+    const paidOn = screen.getByLabelText('Date du paiement')
+    markPartlyTyped(paidOn)
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Marquer comme payée' }))
+
+    expect(onMarkPaid).not.toHaveBeenCalled()
+    expect(paidOn).toHaveAttribute('aria-invalid', 'true')
+    expect(paidOn).toHaveAccessibleDescription(/Date incomplète\./)
+    expect(paidOn).toHaveFocus()
+  })
+
   it('shows a refused payment date next to its field', async () => {
     const onMarkPaid = vi.fn<(paidOn?: string) => Promise<void>>().mockRejectedValue(
       new ApiError(400, 'One or more validation errors occurred.', { paidOn: ['The payment date 2030-01-01 is in the future.'] }),

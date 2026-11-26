@@ -2,7 +2,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
 // The API that the development server forwards the API paths to (dotnet run, see README).
-const api = process.env.FACTUREQR_API ?? 'http://127.0.0.1:5080'
+const api = 'http://127.0.0.1:5080'
 const apiPaths = ['/customers', '/invoices', '/settings', '/health', '/openapi']
 
 export default defineConfig({

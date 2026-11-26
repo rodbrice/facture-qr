@@ -13,6 +13,21 @@ export function hasErrors(errors: FormErrors): boolean {
 }
 
 /**
+ * The date inputs whose text the browser cannot read as a date (validity.badInput). Such an input
+ * reports an empty value, which would otherwise be sent as "no date".
+ */
+export function incompleteDates(inputs: Record<string, HTMLInputElement | null>): FormErrors {
+  const result: FormErrors = { fields: {}, form: [] }
+  for (const [field, input] of Object.entries(inputs)) {
+    if (input?.validity.badInput) {
+      result.fields[field] = 'Date incomplète.'
+    }
+  }
+
+  return result
+}
+
+/**
  * Places the errors of an API answer: a 400 error keyed by one of `fields` goes next to that field,
  * every other message (another key, a 404, a 409, no answer) goes to the form.
  */

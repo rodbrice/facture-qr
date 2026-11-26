@@ -4,8 +4,7 @@ import { defineConfig, devices } from '@playwright/test'
 // PostgreSQL database with the migrations applied. ASPNETCORE_ENVIRONMENT=Development takes the
 // synthetic creditor and the connection string of appsettings.Development.json; set
 // ConnectionStrings__FactureQr to use another database.
-const port = Number(process.env.FACTUREQR_E2E_PORT ?? 5080)
-const baseURL = `http://127.0.0.1:${port}`
+const baseURL = 'http://127.0.0.1:5080'
 
 export default defineConfig({
   testDir: 'e2e',
