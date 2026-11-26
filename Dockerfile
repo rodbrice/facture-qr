@@ -21,7 +21,7 @@ COPY --from=web /src/src/FactureQr.Api/wwwroot src/FactureQr.Api/wwwroot
 RUN dotnet publish src/FactureQr.Api --no-restore --configuration Release --output /app
 
 # 3. The runtime image: ASP.NET Core only, run as the image's unprivileged user.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:11.0
 WORKDIR /app
 COPY --from=api /app ./
 USER $APP_UID
