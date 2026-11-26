@@ -16,7 +16,7 @@ The fifth unit (B4) is the first public release, v0.1. Someone who clones the re
 
 ### 2. The API applies the migrations when it starts, if configured
 
-With `Database:ApplyMigrations=true`, a hosted service (`DatabaseStartup`) applies the pending migrations before the server answers. The schema is still created only by the migrations of ADR-0003; this only changes who runs them. The setting is off by default, so running the API by hand or in the tests is unchanged. If the migration fails, the API does not start, and `depends_on: condition: service_healthy` makes the API wait until PostgreSQL accepts connections.
+With `Database:ApplyMigrations=true`, a hosted service (`DatabaseStartup`) applies the pending migrations before the server answers. The schema is still created only by the migrations of ADR-0003; this only changes who runs them. The setting is off by default, so running the API by hand or in the tests is unchanged. If the migration fails, the API does not start, and `depends_on: condition: service_healthy` makes the API wait until PostgreSQL accepts connections. The health check connects over TCP, as the API does, so the temporary server that the PostgreSQL image runs on a local socket only while it creates the database on the first start does not count as ready.
 
 ### 3. Synthetic data added to an empty database, if configured
 
