@@ -1,0 +1,310 @@
+:root {
+  color-scheme: light;
+  --text: #1b1f24;
+  --muted: #4f5761;
+  --background: #ffffff;
+  --surface: #f4f6f8;
+  --border: #c9d0d8;
+  --accent: #0b5cad;
+  --accent-text: #ffffff;
+  --error: #b3261e;
+  --error-surface: #fdecea;
+  --focus: #e8a400;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--background);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+}
+
+/* A focus ring that is always visible, on every interactive element. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: var(--accent-text);
+  z-index: 1;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 2rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.app-name {
+  margin: 0;
+  font-weight: 700;
+}
+
+nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+nav a {
+  color: var(--text);
+}
+
+nav a.active {
+  font-weight: 700;
+  text-decoration-thickness: 3px;
+}
+
+main {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+h1 {
+  margin: 0.5rem 0;
+  font-size: 1.75rem;
+}
+
+h2 {
+  font-size: 1.3rem;
+}
+
+h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* On a narrow screen a wide table scrolls by itself instead of widening the page. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0 1rem;
+}
+
+th,
+td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.total {
+  font-weight: 700;
+}
+
+.panel {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  margin: 1rem 0;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 0 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+  flex: 1;
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
+
+label {
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--muted);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--text);
+}
+
+input[aria-invalid='true'],
+select[aria-invalid='true'] {
+  border: 2px solid var(--error);
+}
+
+.field-error {
+  margin: 0.25rem 0 0;
+  color: var(--error);
+  font-weight: 600;
+}
+
+.form-alert {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid var(--error);
+  background: var(--error-surface);
+  color: var(--error);
+}
+
+.form-alert p,
+.form-alert ul {
+  margin: 0;
+}
+
+button,
+.button {
+  display: inline-block;
+  font: inherit;
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: var(--background);
+  color: var(--accent);
+  padding: 0.2rem 0.6rem;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.status {
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
+.badge {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.badge-draft {
+  background: #eef1f4;
+}
+
+.badge-issued {
+  background: #e3effb;
+  border-color: #8fb8e3;
+}
+
+.badge-paid {
+  background: #e3f4e6;
+  border-color: #86c595;
+}
+
+.badge-overdue {
+  background: var(--error-surface);
+  border-color: var(--error);
+  color: var(--error);
+  font-weight: 600;
+}
+
+.invoice-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 3rem;
+}
+
+address {
+  font-style: normal;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-content: start;
+  gap: 0.25rem 1rem;
+}
+
+dt {
+  font-weight: 600;
+}
+
+dd {
+  margin: 0;
+}
+
+code {
+  font-size: 0.95em;
+}

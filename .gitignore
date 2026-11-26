@@ -17,3 +17,9 @@ Thumbs.db
 
 # Local configuration overrides
 *.local.json
+
+# Front end (web/): dependencies, test output, and the build the API serves from wwwroot
+node_modules/
+web/test-results/
+web/playwright-report/
+src/FactureQr.Api/wwwroot/
