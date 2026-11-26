@@ -77,6 +77,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 <https://github.com/micjahn/ZXing.Net> — Apache License 2.0: <https://www.apache.org/licenses/LICENSE-2.0>. Used only by the API tests, to decode the QR code redrawn from the served PDF.
 
+## React, React DOM and scheduler (front end)
+
+<https://github.com/facebook/react> — MIT License, Copyright (c) Meta Platforms, Inc. and affiliates. Same licence text as above, with that copyright line. Bundled into the built front end.
+
+## React Router (react-router, with @remix-run/route-pattern and cookie-es; front end)
+
+<https://github.com/remix-run/react-router> — MIT License, Copyright (c) React Training LLC 2015-2019, Copyright (c) Remix Software Inc. 2020-2021, Copyright (c) Shopify Inc. 2022-2023. Its dependencies <https://github.com/remix-run/remix> (`@remix-run/route-pattern`, Copyright (c) 2025 Shopify Inc.) and <https://github.com/unjs/cookie-es> (Copyright (c) Pooya Parsa, Copyright (c) 2012-2014 Roman Shtylman) are also MIT. Same licence text as above, with those copyright lines. Bundled into the built front end.
+
+## Front-end build and test tools (not distributed)
+
+Used only to build, check and test `web/`, and not part of the built front end: Vite and @vitejs/plugin-react (MIT), Vitest (MIT), Testing Library (MIT), jsdom (MIT), oxlint (MIT), TypeScript (Apache License 2.0), Playwright (Apache License 2.0). The full list with versions is in `web/package-lock.json`.
+
 ## Liberation Sans (font subset embedded in generated PDFs)
 
 SwissQRBill.NET embeds a subset of the Liberation Sans font in the PDF files it produces. Liberation Fonts are licensed under the SIL Open Font License, Version 1.1: <https://github.com/liberationfonts/liberation-fonts/blob/main/LICENSE>.
