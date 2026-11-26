@@ -9,6 +9,7 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <Deterministic>true</Deterministic>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <Version>0.1.0</Version>
   </PropertyGroup>
 
 </Project>
