@@ -85,7 +85,7 @@ Facture QR v0.1 is a local application for one person. What it holds: the names 
 | Invalid or malicious input | Every request is validated by the domain rules (QR-bill character set and lengths, amounts, dates); the database repeats the critical rules as constraints; EF Core sends parameterised SQL. | — |
 | Personal data in logs | Logs contain identifiers and invoice numbers, never names, addresses or request bodies. | — |
 | Another program or user on the same computer | — | Any local program can call the API and read the database volume. The demo's database password is a fixed demo value. |
-| Vulnerable dependencies | Dependabot proposes version updates every week; CodeQL analyses the C# and TypeScript code on every push, pull request and every week. | No container image scanning. |
+| Vulnerable dependencies | Dependabot proposes version updates every week; CodeQL analyses the C# and TypeScript code on every push to `main`, every pull request and every week. | No container image scanning. |
 
 ## What it does
 
@@ -202,7 +202,7 @@ dotnet run --project tools/FactureQr.Samples -- docs/samples
 
 ### Continuous integration
 
-GitHub Actions runs on every push and pull request:
+GitHub Actions runs on every push to `main` and every pull request:
 
 - `.github/workflows/ci.yml`: the build with warnings as errors, the formatting check, the migrations on an empty PostgreSQL database, all the .NET tests, the end-to-end test on that database (its video is kept as an artifact of the run), the lint, type check, unit tests and build of the front end, and the Docker Compose demo, started and checked for its synthetic data.
 - `.github/workflows/codeql.yml`: CodeQL analysis of the C# and TypeScript code, also every week.
@@ -280,6 +280,6 @@ MIT, see [`LICENSE`](LICENSE). Third-party licences are listed in [`THIRD-PARTY-
 
 **Vérification :** la version en vigueur de la norme, la compatibilité de la bibliothèque et les méthodes de validation sont consignées dans `docs/validation/B0-norma.md` ; les commandes exécutées et leurs résultats, unité par unité, sont dans `docs/validation/` (B0 à B4, dont l'essai de la démo depuis un clone neuf). Seule la devise CHF est acceptée dans cette version (ADR-0001). Toutes les données d'exemple sont fictives et proviennent de l'annexe A des Implementation Guidelines.
 
-**Développement :** SDK .NET 10, Node.js 22 et Docker (pour les tests de stockage et de l'API), puis `dotnet build --configuration Release -warnaserror`, `dotnet format --verify-no-changes` et `dotnet test --configuration Release` ; pour l'interface, dans `web/`, `npm run lint`, `npm run typecheck`, `npm test` (Vitest) et `npm run e2e` (Playwright, contre l'API et PostgreSQL). GitHub Actions exécute tout cela, ainsi que la démo Docker Compose, à chaque push et pull request.
+**Développement :** SDK .NET 10, Node.js 22 et Docker (pour les tests de stockage et de l'API), puis `dotnet build --configuration Release -warnaserror`, `dotnet format --verify-no-changes` et `dotnet test --configuration Release` ; pour l'interface, dans `web/`, `npm run lint`, `npm run typecheck`, `npm test` (Vitest) et `npm run e2e` (Playwright, contre l'API et PostgreSQL). GitHub Actions exécute tout cela, ainsi que la démo Docker Compose, à chaque push sur `main` et à chaque pull request.
 
 **Prochaines étapes :** version 0.2 avec l'import des relevés camt.054 et le rapprochement automatique des paiements par référence ; validation des QR-factures sur le portail SIX. Licence MIT.
