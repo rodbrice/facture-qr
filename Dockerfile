@@ -1,7 +1,7 @@
 # The API with the front end it serves, as one image (see ADR-0006 and docker-compose.yml).
 
 # 1. The front end, built with Node.js into the API's wwwroot folder.
-FROM node:22-slim AS web
+FROM node:25-slim AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
