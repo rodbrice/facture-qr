@@ -147,7 +147,7 @@ The standard is regulated and SIX offers no quality check of its own, so the rep
 - Tests of the QR-bill core: `PaymentReferenceTests`, `StructuredAddressTests`, `IbanTests`, `QrBillRequestTests`, `CurrencyRuleTests`, `QrPayloadGoldenTests`, `RoundTripTests`, `RenderingSmokeTests`.
 - Tests of the invoice model: `InvoiceTests`, `InvoiceNumberTests` (unit tests of the rules); `MigrationTests`, `InvoiceStorageTests`, `ConcurrencyTests` (against PostgreSQL).
 - Tests of the API (`tests/FactureQr.Api.Tests`): the API runs in memory against PostgreSQL started by Testcontainers; `CustomerApiTests`, `InvoiceApiTests` (200/201/400/404/409, numbering through the API), `InvoicePdfApiTests` (the QR code is read back from the drawing in the PDF by an independent decoder and compared with the invoice), `SettingsApiTests`, `InfrastructureTests` (health, start-up check, OpenAPI, the pages of the front end). `InvoicePaymentTests` covers the reference made from the invoice number.
-- Tests of the front end (`web/`): Vitest for the forms, the error mapping and the formatting (`src/**/*.test.ts(x)`); Playwright for the whole flow and keyboard use against the API and PostgreSQL (`e2e/`).
+- Tests of the front end (`web/`): Vitest for the forms, the pages of the invoice list and of one invoice, the error mapping and the formatting (`src/**/*.test.ts(x)`); Playwright for the whole flow and keyboard use against the API and PostgreSQL (`e2e/`).
 
 ## Design decisions
 

@@ -42,7 +42,7 @@ The interface is in French, like the PDF. There is one language and no translati
 
 ### 7. Tests
 
-- **Vitest** with Testing Library (jsdom): the error mapping (`toApiError`, `formErrors`), the formatting, and the forms (labels, values sent, errors placed next to their field, focus, keyboard use).
+- **Vitest** with Testing Library (jsdom): the error mapping (`toApiError`, `formErrors`), the formatting, the forms (labels, values sent, errors placed next to their field, a partly typed date refused before sending, focus, keyboard use) and the pages of the invoice list (state, overdue flag, total) and of one invoice (one line removal at a time, its error cleared by the next line action or the issue).
 - **Playwright**: one end-to-end test of the whole flow (customer refused then saved, draft with lines and a refused line, issue, PDF download, payment, list, settings) and one keyboard test, against the API and a real PostgreSQL database, on the built front end served by the API. In CI the video of the run is kept as an artifact.
 
 ## Consequences
