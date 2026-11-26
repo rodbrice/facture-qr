@@ -28,6 +28,11 @@ public static class CustomerEndpoints
             .WithSummary("Returns one customer.")
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapPut("/{id:guid}", Update)
+            .WithSummary("Replaces the address of a customer; invoices already created keep the address they copied.")
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return app;
     }
 
@@ -52,6 +57,31 @@ public static class CustomerEndpoints
         return TypedResults.Created($"/customers/{customer.Id}", CustomerResponse.From(customer));
     }
 
+    private static async Task<Results<Ok<CustomerResponse>, ValidationProblem, ProblemHttpResult>> Update(
+        Guid id, AddressDto address, FactureQrDbContext db, ILoggerFactory loggers, CancellationToken cancellationToken)
+    {
+        Customer? customer = await db.Customers.SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (customer is null)
+        {
+            return NotFound(id);
+        }
+
+        try
+        {
+            customer.ChangeAddress(address.ToStructuredAddress());
+        }
+        catch (QrBillValidationException e)
+        {
+            return Problems.Invalid(Problems.JsonName(e.Field), e.Message);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        ILogger logger = loggers.CreateLogger(LogCategory);
+        ApiLog.CustomerUpdated(logger, customer.Id);
+
+        return TypedResults.Ok(CustomerResponse.From(customer));
+    }
+
     private static async Task<Ok<List<CustomerResponse>>> List(FactureQrDbContext db, CancellationToken cancellationToken)
     {
         List<Customer> customers = await db.Customers.AsNoTracking()
@@ -64,7 +94,9 @@ public static class CustomerEndpoints
     {
         Customer? customer = await db.Customers.AsNoTracking().SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
         return customer is null
-            ? Problems.NotFound($"No customer with the identifier {id}.")
+            ? NotFound(id)
             : TypedResults.Ok(CustomerResponse.From(customer));
     }
+
+    private static ProblemHttpResult NotFound(Guid id) => Problems.NotFound($"No customer with the identifier {id}.");
 }

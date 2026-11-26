@@ -110,6 +110,65 @@
             }
           }
         }
+      },
+      "put": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Replaces the address of a customer; invoices already created keep the address they copied.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/invoices": {
@@ -542,6 +601,26 @@
           }
         }
       }
+    },
+    "/settings/creditor": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Returns the creditor from the Invoicing:Creditor configuration section.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -611,6 +690,29 @@
           }
         },
         "description": "A new draft for a customer, optionally with its first lines."
+      },
+      "CreditorResponse": {
+        "required": [
+          "address",
+          "iban",
+          "isQrIban"
+        ],
+        "type": "object",
+        "properties": {
+          "address": {
+            "description": "The structured address of the account holder.",
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "iban": {
+            "type": "string",
+            "description": "The account, grouped by four characters (\u0060CH44 3199 9123 0008 8901 2\u0060)."
+          },
+          "isQrIban": {
+            "type": "boolean",
+            "description": "True for a QR-IBAN (the invoices carry a QR reference), false for an IBAN (Creditor Reference)."
+          }
+        },
+        "description": "The creditor printed on every invoice, as read from the configuration."
       },
       "CustomerResponse": {
         "required": [
@@ -1028,6 +1130,9 @@
     },
     {
       "name": "Invoices"
+    },
+    {
+      "name": "Settings"
     }
   ]
 }

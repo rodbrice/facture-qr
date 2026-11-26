@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FactureQr.Api.Customers;
+using FactureQr.Api.Invoices;
 
 namespace FactureQr.Api.Tests;
 
@@ -109,6 +110,45 @@ public class CustomerApiTests(PostgreSqlFixture postgres)
         HttpResponseMessage response = await client.PostAsync("/customers", new StringContent("""{ "name": "Simon Muster", """, System.Text.Encoding.UTF8, "application/json"));
 
         await response.AssertProblemAsync(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task A_customer_s_address_is_replaced_with_200_and_existing_invoices_keep_the_old_one()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
+        HttpClient client = api.CreateClient();
+        CustomerResponse customer = await client.CreateCustomerAsync();
+        InvoiceResponse draft = await client.CreateDraftAsync(customer.Id, new LineRequest("Analyse", 1m, 100m));
+        AddressDto moved = ApiClient.SimonMuster with { Street = "Bahnhofstrasse", BuildingNumber = "7", PostalCode = "9400", Town = "Rorschach" };
+
+        HttpResponseMessage response = await client.PutAsJsonAsync($"/customers/{customer.Id}", moved, ApiClient.Json);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(new CustomerResponse(customer.Id, moved), await response.ReadAsync<CustomerResponse>());
+        Assert.Equal(moved, (await client.GetFromJsonAsync<CustomerResponse>($"/customers/{customer.Id}", ApiClient.Json))!.Address);
+        Assert.Equal(ApiClient.SimonMuster, (await client.GetFromJsonAsync<InvoiceResponse>($"/invoices/{draft.Id}", ApiClient.Json))!.BillTo);
+    }
+
+    [Fact]
+    public async Task An_invalid_new_address_is_refused_with_400_naming_the_field_and_changes_nothing()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
+        HttpClient client = api.CreateClient();
+        CustomerResponse customer = await client.CreateCustomerAsync();
+
+        HttpResponseMessage response = await client.PutAsJsonAsync($"/customers/{customer.Id}", ApiClient.SimonMuster with { Country = "Suisse" }, ApiClient.Json);
+
+        await response.AssertInvalidFieldAsync("country");
+        Assert.Equal(ApiClient.SimonMuster, (await client.GetFromJsonAsync<CustomerResponse>($"/customers/{customer.Id}", ApiClient.Json))!.Address);
+    }
+
+    [Fact]
+    public async Task Replacing_the_address_of_an_unknown_customer_is_answered_with_404()
+    {
+        await using var api = new ApiFactory(await postgres.CreateMigratedDatabaseAsync());
+        HttpClient client = api.CreateClient();
+
+        await (await client.PutAsJsonAsync($"/customers/{Guid.NewGuid()}", ApiClient.SimonMuster, ApiClient.Json)).AssertProblemAsync(HttpStatusCode.NotFound);
     }
 
     [Fact]

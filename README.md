@@ -4,7 +4,7 @@ Invoicing with Swiss QR-bills for independents, in .NET.
 
 A QR-bill is the only payment slip accepted in Switzerland and Liechtenstein since 30 September 2022. Producing one correctly means following the SIX Implementation Guidelines: structured addresses, a QR-IBAN with a QR reference or an IBAN with an ISO 11649 Creditor Reference, a precise 31-line payload inside the Swiss QR Code, and a fixed 210 × 105 mm layout. This repository is being built in small, verified steps, starting with that core.
 
-**Status:** third unit (B2) in progress. The repository contains the QR-bill core library (B0), the invoice model with its storage in PostgreSQL (B1), an HTTP API that drives the whole invoice flow and serves the invoice as a PDF with its QR-bill (B2), their tests, synthetic samples and the quality baseline (build with warnings as errors, formatting check, continuous integration). The QR-bill samples pass the library's validation, a round trip through the decoder and an independent QR decoder; validation in the SIX portal is still pending. There is no user interface yet. The planned next steps are listed at the end.
+**Status:** fourth unit (B3) in progress. The repository contains the QR-bill core library (B0), the invoice model with its storage in PostgreSQL (B1), an HTTP API that drives the whole invoice flow and serves the invoice as a PDF with its QR-bill (B2), a React front end in French served by the API (B3), their tests, synthetic samples and the quality baseline (build with warnings as errors, formatting check, linting, continuous integration with an end-to-end test). The QR-bill samples pass the library's validation, a round trip through the decoder and an independent QR decoder; validation in the SIX portal is still pending. The planned next steps are listed at the end.
 
 A French summary follows the English text ([Résumé en français](#résumé-en-français)).
 
@@ -51,12 +51,13 @@ FACTUREQR_DATABASE="Host=localhost;Database=facture_qr;Username=postgres;Passwor
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /customers`, `GET /customers`, `GET /customers/{id}` | Customers with a structured address |
+| `POST /customers`, `GET /customers`, `GET /customers/{id}`, `PUT /customers/{id}` | Customers with a structured address |
 | `POST /invoices`, `GET /invoices`, `GET /invoices/{id}` | Drafts with their lines; the list with the state and whether each invoice is overdue |
 | `POST /invoices/{id}/lines`, `DELETE /invoices/{id}/lines/{lineId}` | Edit a draft |
 | `POST /invoices/{id}/issue` | Issue: next number of the year, issue date (today by default) and due date (30 days later by default) |
 | `POST /invoices/{id}/mark-paid` | Record the payment |
 | `GET /invoices/{id}/pdf` | The invoice with its QR-bill, `application/pdf` |
+| `GET /settings/creditor` | The creditor of the configuration (read-only) |
 | `GET /health`, `GET /openapi/v1.json` | Health (checks the database) and the OpenAPI document |
 
 Errors are ProblemDetails: 400 when the request itself is invalid (with the field named), 404 when the resource in the URL does not exist, 409 when the state of the invoice does not allow the request (for example editing an issued invoice). Logs are JSON lines, without names or addresses. The OpenAPI document is also committed as [`docs/api/openapi.json`](docs/api/openapi.json). The reasons for these choices are in [ADR-0004](docs/adr/0004-http-api.md); example calls and their responses are in [`docs/validation/B2.md`](docs/validation/B2.md).
@@ -70,6 +71,20 @@ ConnectionStrings__FactureQr="Host=localhost;Database=facture_qr;Username=postgr
 ```
 
 The API has no authentication: it is meant to run locally for one person and must not be exposed on a network as it is.
+
+## Front end
+
+`web/` is a React and TypeScript application, in French, that drives the whole flow from a browser: customers (list, create, edit), the list of invoices with their state and an *en retard* flag, the editor of a draft (lines, issue), the PDF download, the payment and a settings page that shows the creditor of the configuration. Each refused request is shown next to the field or the action it concerns; the rules themselves stay in the API. The reasons for these choices are in [ADR-0005](docs/adr/0005-front-end.md).
+
+With Node.js 22, build it into the API, which then serves it at `/`:
+
+```sh
+cd web
+npm ci
+npm run build    # writes src/FactureQr.Api/wwwroot
+```
+
+Then start the API as above and open the address `dotnet run` prints (`http://localhost:5000` by default). To work on the front end, start the API on port 5080 (`ASPNETCORE_URLS=http://127.0.0.1:5080`) and run `npm run dev` in `web/`: the Vite server forwards the API paths to it.
 
 ![Invoice 2026-0001 produced by the API](docs/samples/invoice-2026-0001.png)
 
@@ -89,7 +104,7 @@ Three synthetic bills, one per reference variant, are under [`docs/samples`](doc
 
 ## Build and test
 
-Requirements: .NET SDK 10 (see `global.json`) and Docker for the storage and API tests, which start a disposable PostgreSQL with [Testcontainers](https://dotnet.testcontainers.org/). On Linux, PNG rendering also needs the SkiaSharp native library, which the test and tool projects reference as a NuGet package.
+Requirements: .NET SDK 10 (see `global.json`) and Docker for the storage and API tests, which start a disposable PostgreSQL with [Testcontainers](https://dotnet.testcontainers.org/); Node.js 22 for the front end. On Linux, PNG rendering also needs the SkiaSharp native library, which the test and tool projects reference as a NuGet package.
 
 ```sh
 dotnet restore
@@ -98,13 +113,27 @@ dotnet format --verify-no-changes
 dotnet test --configuration Release
 ```
 
+The front end, from `web/`:
+
+```sh
+npm ci
+npm run lint
+npm run typecheck
+npm test              # Vitest
+npm run build
+npx playwright install chromium
+npm run e2e           # Playwright: starts the API with dotnet run
+```
+
+The end-to-end test needs a PostgreSQL database with the migrations applied (see [Storage](#storage)); it uses the connection string of `appsettings.Development.json` unless `ConnectionStrings__FactureQr` is set.
+
 To regenerate the sample files:
 
 ```sh
 dotnet run --project tools/FactureQr.Samples -- docs/samples
 ```
 
-The same four commands run in GitHub Actions on every push and pull request (`.github/workflows/ci.yml`), together with `dotnet ef database update` on an empty PostgreSQL database.
+The same commands run in GitHub Actions on every push and pull request (`.github/workflows/ci.yml`), together with `dotnet ef database update` on an empty PostgreSQL database, on which the end-to-end test then runs; the video of that run is kept as an artifact of the workflow.
 
 ## How correctness is checked
 
@@ -114,9 +143,11 @@ The standard is regulated and SIX offers no quality check of its own, so the rep
 - [`docs/validation/B0.md`](docs/validation/B0.md): the commands run, their results, the independent checks (golden payloads written by hand from the standard, round trip through the decoder, a second QR decoder, geometry of the rendered payment part against the Style Guide) and the protocol for the SIX validation portal.
 - [`docs/validation/B1.md`](docs/validation/B1.md): the commands and results of the invoice model and its storage.
 - [`docs/validation/B2.md`](docs/validation/B2.md): the acceptance criteria of the API, the commands and results, example calls and a second decoding of the invoice PDF's QR code.
+- [`docs/validation/B3.md`](docs/validation/B3.md): the acceptance criteria of the front end, the commands and results.
 - Tests of the QR-bill core: `PaymentReferenceTests`, `StructuredAddressTests`, `IbanTests`, `QrBillRequestTests`, `CurrencyRuleTests`, `QrPayloadGoldenTests`, `RoundTripTests`, `RenderingSmokeTests`.
 - Tests of the invoice model: `InvoiceTests`, `InvoiceNumberTests` (unit tests of the rules); `MigrationTests`, `InvoiceStorageTests`, `ConcurrencyTests` (against PostgreSQL).
-- Tests of the API (`tests/FactureQr.Api.Tests`): the API runs in memory against PostgreSQL started by Testcontainers; `CustomerApiTests`, `InvoiceApiTests` (200/201/400/404/409, numbering through the API), `InvoicePdfApiTests` (the QR code is read back from the drawing in the PDF by an independent decoder and compared with the invoice), `InfrastructureTests` (health, start-up check, OpenAPI). `InvoicePaymentTests` covers the reference made from the invoice number.
+- Tests of the API (`tests/FactureQr.Api.Tests`): the API runs in memory against PostgreSQL started by Testcontainers; `CustomerApiTests`, `InvoiceApiTests` (200/201/400/404/409, numbering through the API), `InvoicePdfApiTests` (the QR code is read back from the drawing in the PDF by an independent decoder and compared with the invoice), `SettingsApiTests`, `InfrastructureTests` (health, start-up check, OpenAPI, the pages of the front end). `InvoicePaymentTests` covers the reference made from the invoice number.
+- Tests of the front end (`web/`): Vitest for the forms, the pages of the invoice list and of one invoice, the error mapping and the formatting (`src/**/*.test.ts(x)`); Playwright for the whole flow and keyboard use against the API and PostgreSQL (`e2e/`).
 
 ## Design decisions
 
@@ -124,10 +155,11 @@ The standard is regulated and SIX offers no quality check of its own, so the rep
 - [ADR-0002: Use SwissQRBill.NET to render the payment part](docs/adr/0002-qr-bill-library.md).
 - [ADR-0003: Invoice model, PostgreSQL with EF Core, and yearly numbering](docs/adr/0003-invoice-persistence-and-numbering.md).
 - [ADR-0004: HTTP API, error responses and the invoice PDF](docs/adr/0004-http-api.md).
+- [ADR-0005: React front end served by the API](docs/adr/0005-front-end.md).
 
 ## Planned next steps
 
-1. A React front end served by the API, and a `docker compose` demo.
+1. A `docker compose` demo.
 2. Import of camt.054 bank statements and automatic reconciliation by reference.
 
 Nothing here is a commitment to dates; each step is delivered when it is verified.
@@ -142,12 +174,14 @@ MIT, see [`LICENSE`](LICENSE). Third-party licences are listed in [`THIRD-PARTY-
 
 **Facture QR** est un outil de facturation avec QR-facture pour les indépendants en Suisse, écrit en .NET. La QR-facture est le seul bulletin de versement accepté en Suisse et au Liechtenstein depuis le 30 septembre 2022 ; la produire correctement suppose de respecter les Implementation Guidelines de SIX (adresse structurée, QR-IBAN avec référence QR ou IBAN avec référence de créancier ISO 11649, charge utile de 31 lignes dans le Swiss QR Code, mise en page fixe de 210 × 105 mm).
 
-**État :** troisième unité (B2) en cours. Le dépôt contient la bibliothèque de base (`FactureQr.Core`), le modèle de facture et son stockage dans PostgreSQL (`FactureQr.Persistence`), une API HTTP (`FactureQr.Api`) qui couvre tout le parcours d'une facture et fournit la facture en PDF avec sa QR-facture, leurs tests, des exemples synthétiques et la base de qualité (compilation avec avertissements traités comme des erreurs, vérification du formatage, intégration continue). Les exemples passent la validation de la bibliothèque, un aller-retour par le décodeur et un décodeur QR indépendant ; la validation sur le portail SIX est encore en attente. Il n'y a pas encore d'interface. Les étapes suivantes sont l'interface React avec une démo `docker compose`, puis l'import des relevés camt.054 pour le rapprochement automatique des paiements.
+**État :** quatrième unité (B3) en cours. Le dépôt contient la bibliothèque de base (`FactureQr.Core`), le modèle de facture et son stockage dans PostgreSQL (`FactureQr.Persistence`), une API HTTP (`FactureQr.Api`) qui couvre tout le parcours d'une facture et fournit la facture en PDF avec sa QR-facture, une interface React en français servie par l'API (`web/`), leurs tests, des exemples synthétiques et la base de qualité (compilation avec avertissements traités comme des erreurs, vérification du formatage, analyse du code, intégration continue avec un test de bout en bout). Les exemples passent la validation de la bibliothèque, un aller-retour par le décodeur et un décodeur QR indépendant ; la validation sur le portail SIX est encore en attente. Les étapes suivantes sont une démo `docker compose`, puis l'import des relevés camt.054 pour le rapprochement automatique des paiements.
 
 **Modèle de facture :** une facture passe de brouillon à émise puis payée ; seul un brouillon peut changer. Le total est toujours la somme des lignes et reste dans les limites de la QR-facture. La numérotation est annuelle (`2026-0001`) et unique même lorsque deux factures sont émises au même moment ; les raisons de ces choix sont dans l'ADR-0003.
 
 **API :** clients, brouillons avec leurs lignes, émission, paiement, liste avec l'état et le retard, et `GET /invoices/{id}/pdf` qui renvoie la facture A4 en français avec la section paiement. Les erreurs suivent le format ProblemDetails : 400 pour une requête invalide, 404 pour une ressource inconnue, 409 lorsque l'état de la facture ne permet pas l'opération. Le créancier est lu dans la configuration et vérifié au démarrage. L'API n'a pas d'authentification : elle est prévue pour un usage local par une seule personne. Les choix sont expliqués dans l'ADR-0004.
 
+**Interface :** clients (liste, création, modification), liste des factures avec leur état et le retard, éditeur de brouillon, émission, téléchargement du PDF, paiement et paramètres (le créancier de la configuration, en lecture seule). Chaque erreur de l'API est affichée à côté du champ ou de l'action concernés ; les règles restent dans l'API. L'interface se construit avec Node.js 22 (`npm run build` dans `web/`) et l'API la sert à la racine. Les choix sont expliqués dans l'ADR-0005.
+
 **Vérification :** la version en vigueur de la norme, la compatibilité de la bibliothèque et les méthodes de validation sont consignées dans `docs/validation/B0-norma.md` ; les commandes exécutées, leurs résultats et le protocole du portail de validation SIX sont dans `docs/validation/B0.md`. Seule la devise CHF est acceptée dans cette version (ADR-0001). Toutes les données d'exemple sont fictives et proviennent de l'annexe A des Implementation Guidelines.
 
-**Compiler et tester :** SDK .NET 10 et Docker (pour les tests de stockage et de l'API), puis `dotnet build --configuration Release -warnaserror`, `dotnet format --verify-no-changes` et `dotnet test --configuration Release`. Licence MIT.
+**Compiler et tester :** SDK .NET 10 et Docker (pour les tests de stockage et de l'API), puis `dotnet build --configuration Release -warnaserror`, `dotnet format --verify-no-changes` et `dotnet test --configuration Release` ; pour l'interface, Node.js 22 puis, dans `web/`, `npm run lint`, `npm run typecheck`, `npm test` (Vitest) et `npm run e2e` (Playwright, contre l'API et PostgreSQL). Licence MIT.

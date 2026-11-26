@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    name: Build, format and test
+    name: Build, format, test and end-to-end
     runs-on: ubuntu-latest
     services:
       # An empty database on which the migrations are applied.
@@ -53,3 +53,68 @@ jobs:
       # The persistence and API tests start their own PostgreSQL with Testcontainers (Docker is available on the runner).
       - name: Test
         run: dotnet test --no-build --configuration Release
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install the front end and Chromium
+        working-directory: web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Build the front end into the API's wwwroot
+        working-directory: web
+        run: npm run build
+
+      # The API runs in the Development environment: its appsettings.Development.json holds the
+      # synthetic creditor and the connection string of the database migrated above.
+      - name: End-to-end test (front end, API and PostgreSQL)
+        working-directory: web
+        run: npm run e2e
+
+      - name: Keep the recording of the end-to-end run
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-recording
+          path: |
+            web/test-results/
+            web/playwright-report/
+          retention-days: 14
+
+  web:
+    name: Front end lint, types, unit tests and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests (Vitest)
+        run: npm test
+
+      - name: Build
+        run: npm run build
